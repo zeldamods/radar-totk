@@ -1,0 +1,25 @@
+{
+  "name": "botwradar",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "tsc": "tsc",
+    "dev": "ts-node-dev --respawn --transpileOnly ./app/app.ts",
+    "prod": "tsc && node ./app/app.js"
+  },
+  "author": "leoetlino <leo@leolam.fr>",
+  "license": "GPL-2.0-or-later",
+  "dependencies": {
+    "better-sqlite3": "^5.4.0",
+    "express": "^4.16.4",
+    "response-time": "^2.3.2",
+    "typescript": "^3.3.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^5.2.2",
+    "@types/express": "^4.16.1",
+    "@types/glob": "^7.1.1",
+    "@types/response-time": "^2.3.3",
+    "ts-node-dev": "^1.0.0-pre.32"
+  }
+}

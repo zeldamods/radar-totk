@@ -1,0 +1,4 @@
+build/
+map.db*
+node_modules/
+*.js
