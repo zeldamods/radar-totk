@@ -20,6 +20,8 @@ function parseResult(result: any): {[key: string]: any} {
   return result;
 }
 
+const FIELDS = `objid, map_type, map_name, hash_id, unit_config_name, ui_drop, ui_equip, data`;
+
 app.get('/search/:map_type', (req, res) => {
   const mapType = req.params.map_type;
   const q = req.query.q;
@@ -28,7 +30,7 @@ app.get('/search/:map_type', (req, res) => {
     return;
   }
 
-  const stmt = db.prepare(`SELECT map_type, map_name, hash_id, data, ui_drop, ui_equip FROM objs
+  const stmt = db.prepare(`SELECT ${FIELDS} FROM objs
     WHERE map_type = @map_type
       AND objid in (SELECT rowid FROM objs_fts(@q))
     LIMIT 20`);
@@ -39,7 +41,7 @@ app.get('/search/:map_type', (req, res) => {
 });
 
 app.get('/obj/:objid', (req, res) => {
-  const stmt = db.prepare(`SELECT map_type, map_name, hash_id, data, ui_drop, ui_equip FROM objs
+  const stmt = db.prepare(`SELECT ${FIELDS} FROM objs
     WHERE objid = @objid LIMIT 1`);
   const result = parseResult(stmt.get({
     objid: parseInt(req.params.objid, 0),
@@ -50,7 +52,7 @@ app.get('/obj/:objid', (req, res) => {
 });
 
 app.get('/obj/:map_type/:map_name/:hash_id', (req, res) => {
-  const stmt = db.prepare(`SELECT map_type, map_name, hash_id, data, ui_drop, ui_equip FROM objs
+  const stmt = db.prepare(`SELECT ${FIELDS} FROM objs
     WHERE map_type = @map_type
       AND map_name = @map_name
       AND hash_id = @hash_id LIMIT 1`);
@@ -65,7 +67,7 @@ app.get('/obj/:map_type/:map_name/:hash_id', (req, res) => {
 });
 
 app.get('/obj/:map_type/:map_name/:hash_id/gen_group', (req, res) => {
-  const result = db.prepare(`SELECT map_type, map_name, hash_id, data, ui_drop, ui_equip FROM objs
+  const result = db.prepare(`SELECT ${FIELDS} FROM objs
     WHERE gen_group =
        (SELECT gen_group FROM objs
           WHERE map_type = @map_type
@@ -105,8 +107,7 @@ function handleReqObjs(req: express.Request, res: express.Response) {
   };
 
   const mapNameQuery = mapName ? `AND map_name = @map_name` : '';
-  const query = `SELECT objid, map_type, map_name, hash_id, unit_config_name, ui_drop, ui_equip, data
-    FROM objs
+  const query = `SELECT ${FIELDS} FROM objs
     WHERE map_type = @map_type ${mapNameQuery}
       AND objid in (SELECT rowid FROM objs_fts(@q))`;
 
