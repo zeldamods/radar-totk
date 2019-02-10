@@ -28,7 +28,7 @@ app.get('/search/:map_type', (req, res) => {
     return;
   }
 
-  const stmt = db.prepare(`SELECT map_type, map_name, hash_id, data FROM objs
+  const stmt = db.prepare(`SELECT map_type, map_name, hash_id, data, ui_drop, ui_equip FROM objs
     WHERE map_type = @map_type
       AND objid in (SELECT rowid FROM objs_fts(@q))
     LIMIT 20`);
@@ -39,7 +39,7 @@ app.get('/search/:map_type', (req, res) => {
 });
 
 app.get('/obj/:objid', (req, res) => {
-  const stmt = db.prepare(`SELECT map_type, map_name, hash_id, data FROM objs
+  const stmt = db.prepare(`SELECT map_type, map_name, hash_id, data, ui_drop, ui_equip FROM objs
     WHERE objid = @objid LIMIT 1`);
   const result = parseResult(stmt.get({
     objid: parseInt(req.params.objid, 0),
