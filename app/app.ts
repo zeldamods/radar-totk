@@ -1,3 +1,5 @@
+// @ts-ignore
+import cors from 'cors';
 import express from 'express';
 import path from 'path';
 import responseTime from 'response-time';
@@ -10,6 +12,7 @@ const db = sqlite3(path.join(util.APP_ROOT, 'map.db'), {
 });
 const app = express();
 
+app.use(cors());
 app.use(responseTime());
 
 function parseResult(result: any): {[key: string]: any} {
