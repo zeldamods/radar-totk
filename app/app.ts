@@ -28,6 +28,7 @@ const FIELDS = `objid, map_type, map_name, hash_id, unit_config_name, ui_drop, u
 app.get('/search/:map_type', (req, res) => {
   const mapType = req.params.map_type;
   const q = req.query.q;
+  const limit = parseInt(req.query.l, 10);
   if (!q) {
     res.json([]);
     return;
@@ -36,9 +37,10 @@ app.get('/search/:map_type', (req, res) => {
   const stmt = db.prepare(`SELECT ${FIELDS} FROM objs
     WHERE map_type = @map_type
       AND objid in (SELECT rowid FROM objs_fts(@q))
-    LIMIT 20`);
+    LIMIT @limit`);
   res.json(stmt.all({
     map_type: mapType,
+    limit: (isNaN(limit) || limit < 0) ? 50 : limit,
     q,
   }).map(parseResult));
 });
