@@ -7,6 +7,8 @@ import * as util from './app/util';
 
 const names: {[actor: string]: string} = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'names.json'), 'utf8'));
 const getUiName = (name: string) => names[name] || name;
+const locationMarkerTexts: {[actor: string]: string} = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'text', 'StaticMsg', 'LocationMarker.json'), 'utf8'));
+const dungeonTexts: {[actor: string]: string} = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'text', 'StaticMsg', 'Dungeon.json'), 'utf8'));
 
 try {
   fs.unlinkSync('map.db');
@@ -38,6 +40,15 @@ const insertObj = db.prepare(`INSERT INTO objs
   (map_type, map_name, map_static, gen_group, hash_id, unit_config_name, ui_name, data, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, ui_drop, ui_equip)
   VALUES
   (@map_type, @map_name, @map_static, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @hard_mode, @disable_rankup_for_hard_mode, @scale, @sharp_weapon_judge_type, @ui_drop, @ui_equip)`);
+
+function objGetUiName(obj: PlacementObj) {
+  if (obj.data.UnitConfigName === 'LocationTag') {
+    const id = obj.data['!Parameters'].MessageID;
+    const locationName = locationMarkerTexts[id] || dungeonTexts[id];
+    return `Location: ${locationName}`;
+  }
+  return getUiName(obj.data.UnitConfigName);
+}
 
 function objGetUiDrops(params: any) {
   const info: string[] = [];
@@ -78,7 +89,7 @@ function processMap(pmap: PlacementMap, isStatic: boolean): void {
       gen_group: obj.genGroupId,
       hash_id: obj.data.HashId,
       unit_config_name: obj.data.UnitConfigName,
-      ui_name: getUiName(obj.data.UnitConfigName),
+      ui_name: objGetUiName(obj),
       data: JSON.stringify(obj.data),
       hard_mode: (params && params.IsHardModeActor) ? 1 : 0,
       disable_rankup_for_hard_mode: (params && params.DisableRankUpForHardMode) ? 1 : 0,
