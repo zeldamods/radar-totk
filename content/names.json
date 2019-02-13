@@ -2387,5 +2387,7 @@
 	"Npc_Gaman01_DLC2nd": "Bayge",
 	"Npc_Gaman02_DLC2nd": "Heehl",
 	"Npc_Gaman03_DLC2nd": "Kabetta",
-	"TBox_Field_Iron_NoReaction_Collabo": "Treasure Chest"
+	"TBox_Field_Iron_NoReaction_Collabo": "Treasure Chest",
+	"Item_CookSet": "Cooking Pot",
+	"Item_CookSet_NoPan": "Cooking Pot"
 }
