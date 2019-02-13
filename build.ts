@@ -45,7 +45,11 @@ function objGetUiName(obj: PlacementObj) {
   if (obj.data.UnitConfigName === 'LocationTag') {
     const id = obj.data['!Parameters'].MessageID;
     const locationName = locationMarkerTexts[id] || dungeonTexts[id];
-    return `Location: ${locationName}`;
+    let s = `Location: ${locationName}`;
+    const dungeonSub = dungeonTexts[id + '_sub'];
+    if (dungeonSub)
+      s += ' - ' + dungeonSub;
+    return s;
   }
   return getUiName(obj.data.UnitConfigName);
 }
