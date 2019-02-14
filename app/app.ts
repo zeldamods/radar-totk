@@ -20,12 +20,14 @@ function parseResult(result: any): {[key: string]: any} {
     return {};
 
   result.data = JSON.parse(result.data);
-  result.drop = JSON.parse(result.drop);
-  result.equip = JSON.parse(result.equip);
+  result.drop = JSON.parse(result.drop) || undefined;
+  result.equip = JSON.parse(result.equip) || undefined;
+  if (!result.equip || !result.equip.length)
+    result.equip = undefined;
   return result;
 }
 
-const FIELDS = `objid, map_type, map_name, hash_id, unit_config_name, 'drop', equip, data`;
+const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name, `drop`, equip, data';
 
 app.get('/obj/:objid', (req, res) => {
   const stmt = db.prepare(`SELECT ${FIELDS} FROM objs

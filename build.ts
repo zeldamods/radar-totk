@@ -57,10 +57,11 @@ function objGetUiName(obj: PlacementObj) {
 }
 
 function objGetDrops(params: any) {
-  return {
-    drop: params.DropActor || undefined,
-    table: (!params.DropActor && params.DropTable && params.DropTable != 'Normal') ? params.DropTable : undefined,
-  };
+  if (params.DropActor)
+    return [1, params.DropActor];
+  if (!params.DropActor && params.DropTable && params.DropTable != 'Normal')
+    return [2, params.DropTable];
+  return null;
 }
 
 function objGetUiDrops(params: any) {
