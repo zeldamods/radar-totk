@@ -103,6 +103,7 @@ function handleReqObjs(req: express.Request, res: express.Response) {
     const result = {
       objid: x.objid,
       map_name: withMapNames ? x.map_name : undefined,
+      hash_id: x.hash_id,
       name: x.unit_config_name,
       ui_drop: x.ui_drop ? x.ui_drop : undefined,
       ui_equip: x.ui_equip ? x.ui_equip : undefined,
