@@ -24,10 +24,11 @@ function parseResult(result: any): {[key: string]: any} {
   result.equip = JSON.parse(result.equip) || undefined;
   if (!result.equip || !result.equip.length)
     result.equip = undefined;
+  result.messageid = result.messageid || undefined;
   return result;
 }
 
-const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name, `drop`, equip, data';
+const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name, `drop`, equip, data, messageid';
 
 app.get('/obj/:objid', (req, res) => {
   const stmt = db.prepare(`SELECT ${FIELDS} FROM objs
@@ -91,6 +92,7 @@ function handleReqObjs(req: express.Request, res: express.Response) {
       name: x.unit_config_name,
       drop: x.drop,
       equip: x.equip,
+      messageid: x.messageid,
       pos: [Math.round(x.data.Translate[0]*100)/100, Math.round(x.data.Translate[2]*100)/100],
     };
     return result;

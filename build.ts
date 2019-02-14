@@ -34,14 +34,15 @@ db.exec(`
    'drop' JSON,
    equip JSON,
    ui_drop TEXT,
-   ui_equip TEXT
+   ui_equip TEXT,
+   messageid TEXT
   );
 `);
 
 const insertObj = db.prepare(`INSERT INTO objs
-  (map_type, map_name, map_static, gen_group, hash_id, unit_config_name, ui_name, data, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, 'drop', equip, ui_drop, ui_equip)
+  (map_type, map_name, map_static, gen_group, hash_id, unit_config_name, ui_name, data, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, 'drop', equip, ui_drop, ui_equip, messageid)
   VALUES
-  (@map_type, @map_name, @map_static, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @hard_mode, @disable_rankup_for_hard_mode, @scale, @sharp_weapon_judge_type, @drop, @equip, @ui_drop, @ui_equip)`);
+  (@map_type, @map_name, @map_static, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @hard_mode, @disable_rankup_for_hard_mode, @scale, @sharp_weapon_judge_type, @drop, @equip, @ui_drop, @ui_equip, @messageid)`);
 
 function objGetUiName(obj: PlacementObj) {
   if (obj.data.UnitConfigName === 'LocationTag') {
@@ -117,6 +118,7 @@ function processMap(pmap: PlacementMap, isStatic: boolean): void {
       equip: params ? JSON.stringify(objGetEquipment(params)) : null,
       ui_drop: params ? objGetUiDrops(params) : null,
       ui_equip: params ? objGetUiEquipment(params) : null,
+      messageid: params ? (params['MessageID'] || null) : null,
     });
     hashIdToObjIdMap.set(obj.data.HashId, result.lastInsertRowid);
   }
