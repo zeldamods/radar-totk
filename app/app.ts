@@ -20,30 +20,12 @@ function parseResult(result: any): {[key: string]: any} {
     return {};
 
   result.data = JSON.parse(result.data);
+  result.drop = JSON.parse(result.drop);
+  result.equip = JSON.parse(result.equip);
   return result;
 }
 
-const FIELDS = `objid, map_type, map_name, hash_id, unit_config_name, ui_drop, ui_equip, data`;
-
-app.get('/search/:map_type', (req, res) => {
-  const mapType = req.params.map_type;
-  const q = req.query.q;
-  const limit = parseInt(req.query.l, 10);
-  if (!q) {
-    res.json([]);
-    return;
-  }
-
-  const stmt = db.prepare(`SELECT ${FIELDS} FROM objs
-    WHERE map_type = @map_type
-      AND objid in (SELECT rowid FROM objs_fts(@q))
-    LIMIT @limit`);
-  res.json(stmt.all({
-    map_type: mapType,
-    limit: (isNaN(limit) || limit < 0) ? 50 : limit,
-    q,
-  }).map(parseResult));
-});
+const FIELDS = `objid, map_type, map_name, hash_id, unit_config_name, drop, equip, data`;
 
 app.get('/obj/:objid', (req, res) => {
   const stmt = db.prepare(`SELECT ${FIELDS} FROM objs
@@ -98,16 +80,15 @@ function handleReqObjs(req: express.Request, res: express.Response) {
     return;
   }
 
-  const getCoords = (x: any) => {
-    const data = JSON.parse(x.data);
+  const getData = (x: any) => {
     const result = {
       objid: x.objid,
       map_name: withMapNames ? x.map_name : undefined,
       hash_id: x.hash_id,
       name: x.unit_config_name,
-      ui_drop: x.ui_drop ? x.ui_drop : undefined,
-      ui_equip: x.ui_equip ? x.ui_equip : undefined,
-      pos: [Math.round(data.Translate[0]*100)/100, Math.round(data.Translate[2]*100)/100],
+      drop: x.drop,
+      equip: x.equip,
+      pos: [Math.round(x.data.Translate[0]*100)/100, Math.round(x.data.Translate[2]*100)/100],
     };
     return result;
   };
@@ -123,7 +104,7 @@ function handleReqObjs(req: express.Request, res: express.Response) {
     map_type: mapType,
     map_name: mapName ? mapName : undefined,
     q,
-  }).map(getCoords));
+  }).map(parseResult).map(getData));
 }
 
 app.get('/objs/:map_type', handleReqObjs);
