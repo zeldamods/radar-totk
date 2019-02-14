@@ -77,6 +77,7 @@ function handleReqObjs(req: express.Request, res: express.Response) {
   const mapName: string|undefined = req.params.map_name;
   const withMapNames: boolean = !!req.query.withMapNames;
   const q: string|undefined = req.query.q;
+  const limit: number = parseInt(req.query.limit || 0, 10) || -1;
   if (!q) {
     res.json([]);
     return;
@@ -96,9 +97,11 @@ function handleReqObjs(req: express.Request, res: express.Response) {
   };
 
   const mapNameQuery = mapName ? `AND map_name = @map_name` : '';
+  const limitQuery = limit != -1 ? 'LIMIT @limit' : '';
   const query = `SELECT ${FIELDS} FROM objs
     WHERE map_type = @map_type ${mapNameQuery}
-      AND objid in (SELECT rowid FROM objs_fts(@q))`;
+      AND objid in (SELECT rowid FROM objs_fts(@q))
+    ${limitQuery}`;
 
   const stmt = db.prepare(query);
 
@@ -106,6 +109,7 @@ function handleReqObjs(req: express.Request, res: express.Response) {
     map_type: mapType,
     map_name: mapName ? mapName : undefined,
     q,
+    limit,
   }).map(parseResult).map(getData));
 }
 
