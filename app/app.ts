@@ -25,7 +25,7 @@ function parseResult(result: any): {[key: string]: any} {
   return result;
 }
 
-const FIELDS = `objid, map_type, map_name, hash_id, unit_config_name, drop, equip, data`;
+const FIELDS = `objid, map_type, map_name, hash_id, unit_config_name, 'drop', equip, data`;
 
 app.get('/obj/:objid', (req, res) => {
   const stmt = db.prepare(`SELECT ${FIELDS} FROM objs
