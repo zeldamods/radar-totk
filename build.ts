@@ -31,15 +31,17 @@ db.exec(`
    disable_rankup_for_hard_mode BOOL DEFAULT 0,
    scale INTEGER DEFAULT 0,
    sharp_weapon_judge_type INTEGER DEFAULT 0,
+   'drop' JSON,
+   equip JSON,
    ui_drop TEXT,
    ui_equip TEXT
   );
 `);
 
 const insertObj = db.prepare(`INSERT INTO objs
-  (map_type, map_name, map_static, gen_group, hash_id, unit_config_name, ui_name, data, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, ui_drop, ui_equip)
+  (map_type, map_name, map_static, gen_group, hash_id, unit_config_name, ui_name, data, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, 'drop', equip, ui_drop, ui_equip)
   VALUES
-  (@map_type, @map_name, @map_static, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @hard_mode, @disable_rankup_for_hard_mode, @scale, @sharp_weapon_judge_type, @ui_drop, @ui_equip)`);
+  (@map_type, @map_name, @map_static, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @hard_mode, @disable_rankup_for_hard_mode, @scale, @sharp_weapon_judge_type, @drop, @equip, @ui_drop, @ui_equip)`);
 
 function objGetUiName(obj: PlacementObj) {
   if (obj.data.UnitConfigName === 'LocationTag') {
@@ -54,6 +56,13 @@ function objGetUiName(obj: PlacementObj) {
   return getUiName(obj.data.UnitConfigName);
 }
 
+function objGetDrops(params: any) {
+  return {
+    drop: params.DropActor || undefined,
+    table: (!params.DropActor && params.DropTable && params.DropTable != 'Normal') ? params.DropTable : undefined,
+  };
+}
+
 function objGetUiDrops(params: any) {
   const info: string[] = [];
   if (params.DropActor)
@@ -63,16 +72,20 @@ function objGetUiDrops(params: any) {
   return info.join('|');
 }
 
-function objGetUiEquipment(params: any) {
+function objGetEquipment(params: any) {
   const info: string[] = [];
   for (const prop of ['EquipItem1', 'EquipItem2', 'EquipItem3', 'EquipItem4', 'EquipItem5', 'RideHorseName']) {
     if ((prop in params) && params[prop] != 'Default')
-      info.push(getUiName(params[prop]));
+      info.push(params[prop]);
   }
   if (params['ArrowName'] && params['ArrowName'] != 'NormalArrow') {
-    info.push(getUiName(params['ArrowName']));
+    info.push(params['ArrowName']);
   }
-  return info.join(', ');
+  return info;
+}
+
+function objGetUiEquipment(params: any) {
+  return objGetEquipment(params).map(getUiName).join(', ');
 }
 
 function processMap(pmap: PlacementMap, isStatic: boolean): void {
@@ -99,6 +112,8 @@ function processMap(pmap: PlacementMap, isStatic: boolean): void {
       disable_rankup_for_hard_mode: (params && params.DisableRankUpForHardMode) ? 1 : 0,
       scale,
       sharp_weapon_judge_type: params ? params.SharpWeaponJudgeType : 0,
+      drop: params ? JSON.stringify(objGetDrops(params)) : null,
+      equip: params ? JSON.stringify(objGetEquipment(params)) : null,
       ui_drop: params ? objGetUiDrops(params) : null,
       ui_equip: params ? objGetUiEquipment(params) : null,
     });
