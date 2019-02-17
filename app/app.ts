@@ -25,6 +25,7 @@ function parseResult(result: any): {[key: string]: any} {
   if (!result.equip || !result.equip.length)
     result.equip = undefined;
   result.messageid = result.messageid || undefined;
+  result.pos = [Math.round(result.data.Translate[0]*100)/100, Math.round(result.data.Translate[2]*100)/100];
   return result;
 }
 
@@ -97,7 +98,7 @@ function handleReqObjs(req: express.Request, res: express.Response) {
       drop: x.drop,
       equip: x.equip,
       messageid: x.messageid,
-      pos: [Math.round(x.data.Translate[0]*100)/100, Math.round(x.data.Translate[2]*100)/100],
+      pos: x.pos,
     };
     return result;
   };
