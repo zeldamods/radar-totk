@@ -28,7 +28,7 @@ function parseResult(result: any): {[key: string]: any} {
   return result;
 }
 
-const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name, `drop`, equip, data, messageid';
+const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name as name, `drop`, equip, data, messageid';
 
 // Returns object details for an object.
 app.get('/obj/:objid', (req, res) => {
@@ -93,7 +93,7 @@ function handleReqObjs(req: express.Request, res: express.Response) {
       objid: x.objid,
       map_name: withMapNames ? x.map_name : undefined,
       hash_id: x.hash_id,
-      name: x.unit_config_name,
+      name: x.name,
       drop: x.drop,
       equip: x.equip,
       messageid: x.messageid,
