@@ -122,4 +122,31 @@ function handleReqObjs(req: express.Request, res: express.Response) {
 app.get('/objs/:map_type', handleReqObjs);
 app.get('/objs/:map_type/:map_name', handleReqObjs);
 
+// Returns object IDs for all matching objects.
+function handleReqObjids(req: express.Request, res: express.Response) {
+  const mapType: string|undefined = req.params.map_type;
+  const mapName: string|undefined = req.params.map_name;
+  const q: string|undefined = req.query.q;
+  if (!q) {
+    res.json([]);
+    return;
+  }
+
+  const mapNameQuery = mapName ? `AND map_name = @map_name` : '';
+  const query = `SELECT objid FROM objs
+    WHERE map_type = @map_type ${mapNameQuery}
+      AND objid in (SELECT rowid FROM objs_fts(@q))`;
+
+  const stmt = db.prepare(query);
+
+  res.json(stmt.all({
+    map_type: mapType,
+    map_name: mapName ? mapName : undefined,
+    q,
+  }).map(x => x.objid));
+}
+
+app.get('/objids/:map_type', handleReqObjids);
+app.get('/objids/:map_type/:map_name', handleReqObjids);
+
 app.listen(3007);
