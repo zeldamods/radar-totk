@@ -30,6 +30,7 @@ function parseResult(result: any): {[key: string]: any} {
 
 const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name, `drop`, equip, data, messageid';
 
+// Returns object details for an object.
 app.get('/obj/:objid', (req, res) => {
   const stmt = db.prepare(`SELECT ${FIELDS} FROM objs
     WHERE objid = @objid LIMIT 1`);
@@ -41,6 +42,7 @@ app.get('/obj/:objid', (req, res) => {
   res.json(result);
 });
 
+// Returns object details for an object.
 app.get('/obj/:map_type/:map_name/:hash_id', (req, res) => {
   const stmt = db.prepare(`SELECT ${FIELDS} FROM objs
     WHERE map_type = @map_type
@@ -56,6 +58,7 @@ app.get('/obj/:map_type/:map_name/:hash_id', (req, res) => {
   res.json(result);
 });
 
+// Returns the placement generation group for an object.
 app.get('/obj/:map_type/:map_name/:hash_id/gen_group', (req, res) => {
   const result = db.prepare(`SELECT ${FIELDS} FROM objs
     WHERE gen_group =
@@ -73,6 +76,7 @@ app.get('/obj/:map_type/:map_name/:hash_id/gen_group', (req, res) => {
   res.json(result);
 });
 
+// Returns minimal object data for all matching objects.
 function handleReqObjs(req: express.Request, res: express.Response) {
   const mapType: string|undefined = req.params.map_type;
   const mapName: string|undefined = req.params.map_name;
