@@ -1,9 +1,12 @@
+import CRC32 from 'crc-32';
 import fs from 'fs';
 import path from 'path';
 import sqlite3 from 'better-sqlite3';
 
 import {PlacementMap, PlacementObj, PlacementLink, ResPlacementObj} from './app/PlacementMap';
 import * as util from './app/util';
+
+const actorinfodata = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'ActorInfo.product.json'), 'utf8'));
 
 const names: {[actor: string]: string} = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'names.json'), 'utf8'));
 const getUiName = (name: string) => names[name] || name;
@@ -27,6 +30,8 @@ db.exec(`
    unit_config_name TEXT NOT NULL,
    ui_name TEXT NOT NULL,
    data JSON NOT NULL,
+   one_hit_mode BOOL DEFAULT 0,
+   last_boss_mode BOOL DEFAULT 0,
    hard_mode BOOL DEFAULT 0,
    disable_rankup_for_hard_mode BOOL DEFAULT 0,
    scale INTEGER DEFAULT 0,
@@ -40,9 +45,49 @@ db.exec(`
 `);
 
 const insertObj = db.prepare(`INSERT INTO objs
-  (map_type, map_name, map_static, gen_group, hash_id, unit_config_name, ui_name, data, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, 'drop', equip, ui_drop, ui_equip, messageid)
+  (map_type, map_name, map_static, gen_group, hash_id, unit_config_name, ui_name, data, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, 'drop', equip, ui_drop, ui_equip, messageid)
   VALUES
-  (@map_type, @map_name, @map_static, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @hard_mode, @disable_rankup_for_hard_mode, @scale, @sharp_weapon_judge_type, @drop, @equip, @ui_drop, @ui_equip, @messageid)`);
+  (@map_type, @map_name, @map_static, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @one_hit_mode, @last_boss_mode, @hard_mode, @disable_rankup_for_hard_mode, @scale, @sharp_weapon_judge_type, @drop, @equip, @ui_drop, @ui_equip, @messageid)`);
+
+function getActorData(name: string) {
+  const h = CRC32.str(name) >>> 0;
+  const hashes = actorinfodata['Hashes'];
+  let a = 0, b = hashes.length - 1;
+  while (a <= b) {
+    const m = (a + b) >> 1;
+    if (hashes[m] < h)
+      a = m + 1;
+    else if (hashes[m] > h)
+      b = m - 1;
+    else
+      return actorinfodata['Actors'][m];
+  }
+  return null;
+}
+
+function isFlag4Actor(name: string) {
+  if (name == 'Enemy_GanonBeast')
+    return false;
+  const info = getActorData(name);
+  for (const x of ['Enemy', 'GelEnemy', 'SandWorm', 'Prey', 'Dragon', 'Guardian']) {
+    if (info['profile'] == x)
+      return true;
+  }
+  if (info['profile'].includes('NPC'))
+    return true;
+  return false;
+}
+
+function shouldSpawnObjForLastBossMode(obj: PlacementObj) {
+  const name: string = obj.data.UnitConfigName;
+  if (isFlag4Actor(name))
+    return false;
+  if (name == 'Enemy_Guardian_A')
+    return false;
+  if (name.includes('Entrance') || name.includes('WarpPoint') || name.includes('Terminal'))
+    return false;
+  return true;
+}
 
 function objGetUiName(obj: PlacementObj) {
   if (obj.data.UnitConfigName === 'LocationTag') {
@@ -110,6 +155,8 @@ function processMap(pmap: PlacementMap, isStatic: boolean): void {
       unit_config_name: obj.data.UnitConfigName,
       ui_name: objGetUiName(obj),
       data: JSON.stringify(obj.data),
+      one_hit_mode: (params && params.IsIchigekiActor) ? 1 : 0,
+      last_boss_mode: shouldSpawnObjForLastBossMode(obj) ? 1 : 0,
       hard_mode: (params && params.IsHardModeActor) ? 1 : 0,
       disable_rankup_for_hard_mode: (params && params.DisableRankUpForHardMode) ? 1 : 0,
       scale,
@@ -164,10 +211,10 @@ createIndexes();
 
 function createFts() {
   db.exec(`
-    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", map, actor, name, data, 'drop', equip, hard, no_rankup, scale, bonus);
+    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus);
 
-    INSERT INTO objs_fts(rowid, map, actor, name, data, 'drop', equip, hard, no_rankup, scale, bonus)
-    SELECT objid, map_type||'/'||map_name, unit_config_name, ui_name, data, ui_drop, ui_equip, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type FROM objs;
+    INSERT INTO objs_fts(rowid, map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus)
+    SELECT objid, map_type||'/'||map_name, unit_config_name, ui_name, data, ui_drop, ui_equip, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type FROM objs;
   `);
 }
 console.log('creating FTS tables...');
