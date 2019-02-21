@@ -27,11 +27,14 @@ function parseResult(result: any): {[key: string]: any} {
   result.messageid = result.messageid || undefined;
   result.scale = result.scale != null ? result.scale : undefined;
   result.sharp_weapon_judge_type = result.sharp_weapon_judge_type != null ? result.sharp_weapon_judge_type : undefined;
+  result.hard_mode = result.hard_mode ? true : undefined;
+  // Most objects do not have DisableRankUpForMasterMode set, so don't include it unless it is set.
+  result.disable_rankup_for_hard_mode = result.disable_rankup_for_hard_mode ? true : undefined;
   result.pos = [Math.round(result.data.Translate[0]*100)/100, Math.round(result.data.Translate[2]*100)/100];
   return result;
 }
 
-const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name as name, `drop`, equip, data, messageid, scale, sharp_weapon_judge_type';
+const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name as name, `drop`, equip, data, messageid, scale, sharp_weapon_judge_type, hard_mode, disable_rankup_for_hard_mode';
 
 // Returns object details for an object.
 app.get('/obj/:objid', (req, res) => {
