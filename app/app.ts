@@ -90,17 +90,11 @@ function handleReqObjs(req: express.Request, res: express.Response) {
   }
 
   const getData = (x: any) => {
-    const result = {
-      objid: x.objid,
-      map_name: withMapNames ? x.map_name : undefined,
-      hash_id: x.hash_id,
-      name: x.name,
-      drop: x.drop,
-      equip: x.equip,
-      messageid: x.messageid,
-      pos: x.pos,
-    };
-    return result;
+    x.data = undefined;
+    x.map_type = undefined;
+    if (!withMapNames)
+      x.map_name = undefined;
+    return x;
   };
 
   const mapNameQuery = mapName ? `AND map_name = @map_name` : '';
