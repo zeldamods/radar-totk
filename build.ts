@@ -136,6 +136,16 @@ function processMap(pmap: PlacementMap, isStatic: boolean): void {
   process.stdout.write(`processing ${pmap.type}/${pmap.name} (static: ${isStatic})`);
   const hashIdToObjIdMap: Map<number, any> = new Map();
 
+  const genGroups: Map<number, PlacementObj[]> = new Map();
+  const genGroupSkipped: Map<number, boolean> = new Map();
+  for (const obj of pmap.getObjs()) {
+    if (!genGroups.has(obj.genGroupId))
+      genGroups.set(obj.genGroupId, []);
+    genGroups.get(obj.genGroupId)!.push(obj);
+  }
+  for (const [id, genGroup] of genGroups.entries())
+    genGroupSkipped.set(id, genGroup.some(o => !shouldSpawnObjForLastBossMode(o)));
+
   for (const obj of pmap.getObjs()) {
     const params = obj.data['!Parameters'];
 
@@ -153,7 +163,7 @@ function processMap(pmap: PlacementMap, isStatic: boolean): void {
       ui_name: objGetUiName(obj),
       data: JSON.stringify(obj.data),
       one_hit_mode: (params && params.IsIchigekiActor) ? 1 : 0,
-      last_boss_mode: shouldSpawnObjForLastBossMode(obj) ? 1 : 0,
+      last_boss_mode: genGroupSkipped.get(obj.genGroupId) ? 1 : 0,
       hard_mode: (params && params.IsHardModeActor) ? 1 : 0,
       disable_rankup_for_hard_mode: (params && params.DisableRankUpForHardMode) ? 1 : 0,
       scale,
