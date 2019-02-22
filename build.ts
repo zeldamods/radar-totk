@@ -13,10 +13,7 @@ const getUiName = (name: string) => names[name] || name;
 const locationMarkerTexts: {[actor: string]: string} = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'text', 'StaticMsg', 'LocationMarker.json'), 'utf8'));
 const dungeonTexts: {[actor: string]: string} = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'text', 'StaticMsg', 'Dungeon.json'), 'utf8'));
 
-try {
-  fs.unlinkSync('map.db');
-} catch (e) {}
-const db = sqlite3('map.db');
+const db = sqlite3('map.db.tmp');
 db.pragma('journal_mode = WAL');
 
 db.exec(`
@@ -221,3 +218,4 @@ console.log('creating FTS tables...');
 createFts();
 
 db.close();
+fs.renameSync('map.db.tmp', 'map.db');
