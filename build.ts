@@ -163,7 +163,7 @@ function processMap(pmap: PlacementMap, isStatic: boolean): void {
       ui_name: objGetUiName(obj),
       data: JSON.stringify(obj.data),
       one_hit_mode: (params && params.IsIchigekiActor) ? 1 : 0,
-      last_boss_mode: genGroupSkipped.get(obj.genGroupId) ? 1 : 0,
+      last_boss_mode: genGroupSkipped.get(obj.genGroupId) ? 0 : 1,
       hard_mode: (params && params.IsHardModeActor) ? 1 : 0,
       disable_rankup_for_hard_mode: (params && params.DisableRankUpForHardMode) ? 1 : 0,
       scale,
