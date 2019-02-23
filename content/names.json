@@ -2375,5 +2375,12 @@
 	"Npc_Gaman03_DLC2nd": "Kabetta",
 	"TBox_Field_Iron_NoReaction_Collabo": "Treasure Chest",
 	"Item_CookSet": "Cooking Pot",
-	"Item_CookSet_PanOnly": "Cooking Pot"
+	"Item_CookSet_PanOnly": "Cooking Pot",
+	"Obj_RaftWood_A_S_02": "Raft",
+	"TwnObj_GoddesStatue_A_01": "Large Goddess Statue",
+	"TwnObj_GoddesStatue_A_02": "Small Goddess Statue",
+	"TwnObj_GoddesStatue_A_03": "Small Goddess Statue (Temple of Time)",
+	"TwnObj_GoddesStatue_A_10": "Large Goddess Statue (Springs)",
+	"RememberTag": "Memory Cutscene Tag",
+	"EventTag": "Event Activation Tag"
 }
