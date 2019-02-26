@@ -15,6 +15,8 @@ const app = express();
 app.use(cors());
 app.use(responseTime());
 
+app.use(express.static(path.join(util.APP_ROOT, 'static')));
+
 function parseResult(result: any): {[key: string]: any} {
   if (!result)
     return {};
