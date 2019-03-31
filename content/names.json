@@ -2397,5 +2397,6 @@
 	"TwnObj_GoddesStatue_A_03": "Small Goddess Statue (Temple of Time)",
 	"TwnObj_GoddesStatue_A_10": "Large Goddess Statue (Springs)",
 	"RememberTag": "Memory Cutscene Tag",
-	"EventTag": "Event Activation Tag"
+	"EventTag": "Event Activation Tag",
+	"FldObj_DeathMtArtifactTrain_A_02": "Minecart"
 }
