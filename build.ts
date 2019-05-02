@@ -218,10 +218,10 @@ createIndexes();
 
 function createFts() {
   db.exec(`
-    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus);
+    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static);
 
-    INSERT INTO objs_fts(rowid, map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus)
-    SELECT objid, map_type||'/'||map_name, unit_config_name, ui_name, data, ui_drop, ui_equip, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type FROM objs;
+    INSERT INTO objs_fts(rowid, map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static)
+    SELECT objid, map_type||'/'||map_name, unit_config_name, ui_name, data, ui_drop, ui_equip, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, static FROM objs;
   `);
 }
 console.log('creating FTS tables...');
