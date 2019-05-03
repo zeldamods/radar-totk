@@ -36,7 +36,7 @@ function parseResult(result: any): {[key: string]: any} {
   return result;
 }
 
-const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name as name, `drop`, equip, data, messageid, scale, sharp_weapon_judge_type, hard_mode, disable_rankup_for_hard_mode';
+const FIELDS = 'objid, map_type, map_name, map_static, hash_id, unit_config_name as name, `drop`, equip, data, messageid, scale, sharp_weapon_judge_type, hard_mode, disable_rankup_for_hard_mode';
 
 // Returns object details for an object.
 app.get('/obj/:objid', (req, res) => {
