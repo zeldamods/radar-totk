@@ -98,7 +98,6 @@ function handleReqObjs(req: express.Request, res: express.Response) {
 
   const getData = (x: any) => {
     x.data = undefined;
-    x.map_type = undefined;
     if (!withMapNames)
       x.map_name = undefined;
     return x;
