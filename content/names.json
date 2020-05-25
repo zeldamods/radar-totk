@@ -2398,5 +2398,15 @@
 	"TwnObj_GoddesStatue_A_10": "Large Goddess Statue (Springs)",
 	"RememberTag": "Memory Cutscene Tag",
 	"EventTag": "Event Activation Tag",
-	"FldObj_DeathMtArtifactTrain_A_02": "Minecart"
+	"FldObj_DeathMtArtifactTrain_A_02": "Minecart",
+	"FldObj_RockZoraRelief_A_M_01_ma": "Zora Stone Monument 1",
+	"FldObj_RockZoraRelief_A_M_02_ma": "Zora Stone Monument 2",
+	"FldObj_RockZoraRelief_A_M_03_ma": "Zora Stone Monument 3",
+	"FldObj_RockZoraRelief_A_M_04_ma": "Zora Stone Monument 4",
+	"FldObj_RockZoraRelief_A_M_05_ma": "Zora Stone Monument 5",
+	"FldObj_RockZoraRelief_A_M_06_ma": "Zora Stone Monument 6",
+	"FldObj_RockZoraRelief_A_M_07_ma": "Zora Stone Monument 7",
+	"FldObj_RockZoraRelief_A_M_08_ma": "Zora Stone Monument 8",
+	"FldObj_RockZoraRelief_A_M_09_ma": "Zora Stone Monument 9",
+	"FldObj_RockZoraRelief_A_M_10_ma": "Zora Stone Monument 10"
 }
