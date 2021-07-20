@@ -150,4 +150,36 @@ function handleReqObjids(req: express.Request, res: express.Response) {
 app.get('/objids/:map_type', handleReqObjids);
 app.get('/objids/:map_type/:map_name', handleReqObjids);
 
+function handleReqDropTable(req: express.Request, res:express.Response) {
+  const actorName: string | undefined = req.params.actor_name; // Matches unit_config_name in table objs
+  const tableName: string | undefined = req.params.table_name;
+  let rows = [];
+  if(actorName) {
+    if(tableName) {
+      if(tableName == "NoDrop") {
+        // Does NoDrop really mean it does not drop anything?
+        const stmt = db.prepare(`SELECT data, name from drop_table where
+          actor_name = ? and name = ? `);
+        rows = stmt.all( actorName, tableName );
+      } else {
+        // Get specific Drop Tables for actorName (Normal* and specific)
+        //   Unknown tablenames will only return Normal*
+        const stmt = db.prepare(`SELECT data, name from drop_table where
+          actor_name = ? and ( name = 'Normal' or name like 'Normal_' or name = ? )`);
+        rows = stmt.all( actorName, tableName );
+      }
+    } else {
+      // Get all Drop Tables for unitConfigName
+      const stmt = db.prepare(`SELECT data, name from drop_table where 
+        actor_name = ? `);
+      rows = stmt.all( actorName );
+    }
+    rows = rows.reduce((acc, cur) => ({ ...acc,[cur.name]: JSON.parse(cur.data)}), {});
+  }
+  res.json( rows );
+}
+
+app.get('/drop/:actor_name/:table_name', handleReqDropTable);
+app.get('/drop/:actor_name', handleReqDropTable);
+
 app.listen(3007);
