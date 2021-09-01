@@ -5,7 +5,7 @@
   "scripts": {
     "tsc": "tsc",
     "dev": "ts-node-dev --respawn --transpileOnly ./app/app.ts",
-    "prod": "tsc && node ./app/app.js"
+    "prod": "node ./app/app.js"
   },
   "author": "leoetlino <leo@leolam.fr>",
   "license": "GPL-2.0-or-later",
