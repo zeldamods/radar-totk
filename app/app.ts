@@ -17,6 +17,15 @@ app.use(responseTime());
 
 app.use(express.static(path.join(util.APP_ROOT, 'static')));
 
+function getQueryParamStr(req: express.Request, name: string) {
+  const param = req.query[name];
+  if (param == null)
+    return null;
+  if (Array.isArray(param))
+    return null;
+  return param.toString();
+}
+
 function parseResult(result: any): {[key: string]: any} {
   if (!result)
     return {};
@@ -89,8 +98,9 @@ function handleReqObjs(req: express.Request, res: express.Response) {
   const mapType: string|undefined = req.params.map_type;
   const mapName: string|undefined = req.params.map_name;
   const withMapNames: boolean = !!req.query.withMapNames;
-  const q: string|undefined = req.query.q;
-  const limit: number = parseInt(req.query.limit || 0, 10) || -1;
+  const q: string|null = getQueryParamStr(req, "q");
+  const limitStr = getQueryParamStr(req, "limit");
+  const limit: number = limitStr != null ? parseInt(limitStr, 10) : -1;
   if (!q) {
     res.json([]);
     return;
@@ -127,7 +137,7 @@ app.get('/objs/:map_type/:map_name', handleReqObjs);
 function handleReqObjids(req: express.Request, res: express.Response) {
   const mapType: string|undefined = req.params.map_type;
   const mapName: string|undefined = req.params.map_name;
-  const q: string|undefined = req.query.q;
+  const q: string|null = getQueryParamStr(req, "q");
   if (!q) {
     res.json([]);
     return;
@@ -170,7 +180,7 @@ function handleReqDropTable(req: express.Request, res:express.Response) {
       }
     } else {
       // Get all Drop Tables for unitConfigName
-      const stmt = db.prepare(`SELECT data, name from drop_table where 
+      const stmt = db.prepare(`SELECT data, name from drop_table where
         actor_name = ? `);
       rows = stmt.all( actorName );
     }
