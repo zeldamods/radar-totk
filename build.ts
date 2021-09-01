@@ -3,6 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import sqlite3 from 'better-sqlite3';
 
+const beco = require('./beco');
+
 const yaml = require('js-yaml');
 
 import {PlacementMap, PlacementObj, PlacementLink, ResPlacementObj} from './app/PlacementMap';
@@ -20,12 +22,19 @@ if(!argv.a) {
 }
 const botwData = argv.a;
 
+
 const actorinfodata = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'ActorInfo.product.json'), 'utf8'));
 
 const names: {[actor: string]: string} = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'names.json'), 'utf8'));
 const getUiName = (name: string) => names[name] || name;
 const locationMarkerTexts: {[actor: string]: string} = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'text', 'StaticMsg', 'LocationMarker.json'), 'utf8'));
 const dungeonTexts: {[actor: string]: string} = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'text', 'StaticMsg', 'Dungeon.json'), 'utf8'));
+
+const mapTower = new beco.Beco(path.join(util.APP_ROOT, 'content','ecosystem', 'MapTower.beco'));
+// Tower Names taken from Messages/Msg_USen.product.sarc/StaticMsg/LocationMarker.msyt Tower01 - Tower15
+const towerNames = ["Hebra", "Tabantha", "Gerudo", "Wasteland", "Woodland",
+                    "Central", "Great Plateau", "Dueling Peaks", "Lake",
+                    "Eldin", "Akkala", "Lanayru", "Hateno", "Faron", "Ridgeland"];
 
 // Create Special tags for YAML: !obj, !list, !io, !str64
 const objType = new yaml.Type('!obj', { kind: 'mapping', instanceOf: Object,
@@ -145,7 +154,8 @@ db.exec(`
    equip JSON,
    ui_drop TEXT,
    ui_equip TEXT,
-   messageid TEXT
+   messageid TEXT,
+   region TEXT NOT NULL
   );
 `);
 
@@ -160,9 +170,9 @@ db.exec(`
 
 
 const insertObj = db.prepare(`INSERT INTO objs
-  (map_type, map_name, map_static, gen_group, hash_id, unit_config_name, ui_name, data, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, 'drop', equip, ui_drop, ui_equip, messageid)
+  (map_type, map_name, map_static, gen_group, hash_id, unit_config_name, ui_name, data, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, 'drop', equip, ui_drop, ui_equip, messageid, region)
   VALUES
-  (@map_type, @map_name, @map_static, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @one_hit_mode, @last_boss_mode, @hard_mode, @disable_rankup_for_hard_mode, @scale, @sharp_weapon_judge_type, @drop, @equip, @ui_drop, @ui_equip, @messageid)`);
+  (@map_type, @map_name, @map_static, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @one_hit_mode, @last_boss_mode, @hard_mode, @disable_rankup_for_hard_mode, @scale, @sharp_weapon_judge_type, @drop, @equip, @ui_drop, @ui_equip, @messageid, @region)`);
 
 function getActorData(name: string) {
   const h = CRC32.str(name) >>> 0;
@@ -291,6 +301,7 @@ function processMap(pmap: PlacementMap, isStatic: boolean): void {
       ui_drop: params ? objGetUiDrops(params) : null,
       ui_equip: params ? objGetUiEquipment(params) : null,
       messageid: params ? (params['MessageID'] || null) : null,
+      region: pmap.type == 'MainField' ? towerNames[mapTower.getCurrentAreaNum(obj.data.Translate[0], obj.data.Translate[2])] : "",
     });
     hashIdToObjIdMap.set(obj.data.HashId, result.lastInsertRowid);
   }
@@ -346,10 +357,10 @@ createIndexes();
 
 function createFts() {
   db.exec(`
-    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static);
+    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static, region);
 
-    INSERT INTO objs_fts(rowid, map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static)
-    SELECT objid, map_type||'/'||map_name, unit_config_name, ui_name, data, ui_drop, ui_equip, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, map_static FROM objs;
+    INSERT INTO objs_fts(rowid, map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static, region)
+    SELECT objid, map_type||'/'||map_name, unit_config_name, ui_name, data, ui_drop, ui_equip, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, map_static, region FROM objs;
   `);
 }
 console.log('creating FTS tables...');
