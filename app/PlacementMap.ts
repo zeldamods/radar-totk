@@ -1,7 +1,7 @@
 export type Vec3 = [number, number, number];
 
 export interface ResPlacementObj {
-  readonly '!Parameters': {[key: string]: any};
+  readonly '!Parameters': { [key: string]: any };
   readonly SRTHash: number;
   readonly HashId: number;
   readonly OnlyOne?: boolean;
@@ -16,7 +16,7 @@ export interface ResPlacementObj {
 
 export class PlacementObj {
   static genGroupCounter = 0;
-  constructor(public readonly data: ResPlacementObj) {}
+  constructor(public readonly data: ResPlacementObj) { }
   links: PlacementLink[] = [];
   linksToSelf: PlacementLink[] = [];
   genGroupId = -1;
@@ -24,9 +24,9 @@ export class PlacementObj {
 
 export class PlacementLink {
   constructor(public readonly otherObj: PlacementObj,
-              public readonly linkIter: any,
-              public readonly ltype: string,
-  ) {}
+    public readonly linkIter: any,
+    public readonly ltype: string,
+  ) { }
 }
 
 export class PlacementMap {

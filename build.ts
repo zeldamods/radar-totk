@@ -7,60 +7,64 @@ const beco = require('./beco');
 
 const yaml = require('js-yaml');
 
-import {PlacementMap, PlacementObj, PlacementLink, ResPlacementObj} from './app/PlacementMap';
+import { PlacementMap, PlacementObj, PlacementLink, ResPlacementObj } from './app/PlacementMap';
 import * as util from './app/util';
 
 let parseArgs = require('minimist');
 
 let argv = parseArgs(process.argv);
 
-if(!argv.a) {
-    console.log("Error: Must specify a path to directory with ActorLink and DropTable YAML files");
-    console.log("       e.g. % ts-node build.ts -a ../botw/Actor")
-    console.log("       YAML data files are available from https://github.com/leoetlino/botw");
-    process.exit(1);
+if (!argv.a) {
+  console.log("Error: Must specify a path to directory with ActorLink and DropTable YAML files");
+  console.log("       e.g. % ts-node build.ts -a ../botw/Actor")
+  console.log("       YAML data files are available from https://github.com/leoetlino/botw");
+  process.exit(1);
 }
 const botwData = argv.a;
 
 
 const actorinfodata = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'ActorInfo.product.json'), 'utf8'));
 
-const names: {[actor: string]: string} = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'names.json'), 'utf8'));
+const names: { [actor: string]: string } = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'names.json'), 'utf8'));
 const getUiName = (name: string) => names[name] || name;
-const locationMarkerTexts: {[actor: string]: string} = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'text', 'StaticMsg', 'LocationMarker.json'), 'utf8'));
-const dungeonTexts: {[actor: string]: string} = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'text', 'StaticMsg', 'Dungeon.json'), 'utf8'));
+const locationMarkerTexts: { [actor: string]: string } = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'text', 'StaticMsg', 'LocationMarker.json'), 'utf8'));
+const dungeonTexts: { [actor: string]: string } = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'content', 'text', 'StaticMsg', 'Dungeon.json'), 'utf8'));
 
-const mapTower = new beco.Beco(path.join(util.APP_ROOT, 'content','ecosystem', 'MapTower.beco'));
+const mapTower = new beco.Beco(path.join(util.APP_ROOT, 'content', 'ecosystem', 'MapTower.beco'));
 // Tower Names taken from Messages/Msg_USen.product.sarc/StaticMsg/LocationMarker.msyt Tower01 - Tower15
 const towerNames = ["Hebra", "Tabantha", "Gerudo", "Wasteland", "Woodland",
-                    "Central", "Great Plateau", "Dueling Peaks", "Lake",
-                    "Eldin", "Akkala", "Lanayru", "Hateno", "Faron", "Ridgeland"];
+  "Central", "Great Plateau", "Dueling Peaks", "Lake",
+  "Eldin", "Akkala", "Lanayru", "Hateno", "Faron", "Ridgeland"];
 
 // Create Special tags for YAML: !obj, !list, !io, !str64
-const objType = new yaml.Type('!obj', { kind: 'mapping', instanceOf: Object,
+const objType = new yaml.Type('!obj', {
+  kind: 'mapping', instanceOf: Object,
   resolve: function(data: any) { return true; },
   construct: function(data: any) { return data; },
 });
-const listType = new yaml.Type('!list', { kind: 'mapping', instanceOf: Object,
+const listType = new yaml.Type('!list', {
+  kind: 'mapping', instanceOf: Object,
   resolve: function(data: any) { return true; },
   construct: function(data: any) { return data; },
 });
-const ioType = new yaml.Type('!io', { kind: 'mapping', instanceOf: Object,
+const ioType = new yaml.Type('!io', {
+  kind: 'mapping', instanceOf: Object,
   resolve: function(data: any) { return true; },
   construct: function(data: any) { return data; },
 });
-const str64Type = new yaml.Type('!str64', { kind: 'scalar', instanceOf: String,
+const str64Type = new yaml.Type('!str64', {
+  kind: 'scalar', instanceOf: String,
   resolve: function(data: any) { return true; },
   construct: function(data: any) { return data; },
 });
 
 // Add Special Tags to the Default schema (to facilitate reading)
-let schema = yaml.DEFAULT_SCHEMA.extend([ objType, listType, ioType, str64Type ]);
+let schema = yaml.DEFAULT_SCHEMA.extend([objType, listType, ioType, str64Type]);
 
 function readYAML(filePath: string) {
-  let doc : any = null;
+  let doc: any = null;
   try {
-    doc = yaml.load(fs.readFileSync(filePath, 'utf-8'), {schema: schema});
+    doc = yaml.load(fs.readFileSync(filePath, 'utf-8'), { schema: schema });
   } catch (e) {
     console.log(e);
     process.exit(1);
@@ -68,62 +72,62 @@ function readYAML(filePath: string) {
   return doc;
 }
 
-function getDropTableNameFromActorLinkFile( file: string ) {
+function getDropTableNameFromActorLinkFile(file: string) {
   let doc = readYAML(file);
-  if('DropTableUser' in doc.param_root.objects.LinkTarget) {
+  if ('DropTableUser' in doc.param_root.objects.LinkTarget) {
     let dropTableUser = doc.param_root.objects.LinkTarget.DropTableUser;
     return dropTableUser;
   }
   return null;
 }
 
-function readDropTableFile( file: string ) {
+function readDropTableFile(file: string) {
   let doc = readYAML(file)
-  let tables : any = Object.keys( doc.param_root.objects )
+  let tables: any = Object.keys(doc.param_root.objects)
     .filter(key => key != 'Header')
     .map(key => {
       let dropTable = doc.param_root.objects[key];
-      let items : {[key:string]: any} = {};
-      for(var i = 1; i <= dropTable.ColumnNum; i++) {
-        let itemName = `ItemName${String(i).padStart(2,'0')}`;
-        let itemProb = `ItemProbability${String(i).padStart(2,'0')}`;
-        items[ dropTable[itemName] ] = dropTable[ itemProb ];
+      let items: { [key: string]: any } = {};
+      for (var i = 1; i <= dropTable.ColumnNum; i++) {
+        let itemName = `ItemName${String(i).padStart(2, '0')}`;
+        let itemProb = `ItemProbability${String(i).padStart(2, '0')}`;
+        items[dropTable[itemName]] = dropTable[itemProb];
       }
       let data = {
         items: items,
         repeat_num: [dropTable.RepeatNumMin, dropTable.RepeatNumMax],
       };
-      return {name: key, data: data};
+      return { name: key, data: data };
     });
   return tables;
 }
 
-function readDropTablesByName( table: string ) {
+function readDropTablesByName(table: string) {
   return readDropTableFile(path.join(botwData, 'DropTable', `${table}.drop.yml`));
 }
 
 function readDropTables() {
-  let lootTables : {[key:string]: any} = {}; // { unitConfigName: dropTableFilename }
+  let lootTables: { [key: string]: any } = {}; // { unitConfigName: dropTableFilename }
   // Read all files in content/ActorLink directory
   let dirPath = path.join(botwData, 'ActorLink');
-  let files = fs.readdirSync( dirPath );
-  files.forEach( file => {
+  let files = fs.readdirSync(dirPath);
+  files.forEach(file => {
     let filePath = path.join(botwData, 'ActorLink', file);
-    let tableName = getDropTableNameFromActorLinkFile( filePath );
-    if(tableName) {
+    let tableName = getDropTableNameFromActorLinkFile(filePath);
+    if (tableName) {
       let actorName = path.basename(file, '.yml'); // ==> UnitConfigName
       lootTables[actorName] = tableName;
     }
   });
 
   // Read Drop Table Data
-  let data : any[] = [];
+  let data: any[] = [];
   Object.keys(lootTables)
     .filter(name => lootTables[name] != "Dummy") // Ignore empty Dummy tables
     .forEach(name => {
-      let tables = readDropTablesByName( lootTables[name] );
-      tables.forEach((table : any) => table.actor_name = name ); // Matches unit_config_name in table objs
-      data.push( ... tables );
+      let tables = readDropTablesByName(lootTables[name]);
+      tables.forEach((table: any) => table.actor_name = name); // Matches unit_config_name in table objs
+      data.push(...tables);
     });
   return data;
 }
@@ -334,14 +338,14 @@ function processMaps() {
 db.transaction(() => processMaps())();
 
 function createDropTable() {
-    let stmt = db.prepare(`INSERT INTO drop_table (actor_name, name, data) VALUES (@actor_name, @name, @data)`);
-    dropData.forEach((row : any) => {
-        let result = stmt.run({ actor_name: row.actor_name, name: row.name, data: JSON.stringify(row.data)});
-    });
+  let stmt = db.prepare(`INSERT INTO drop_table (actor_name, name, data) VALUES (@actor_name, @name, @data)`);
+  dropData.forEach((row: any) => {
+    let result = stmt.run({ actor_name: row.actor_name, name: row.name, data: JSON.stringify(row.data) });
+  });
 }
 
 console.log('creating drop data table...');
-db.transaction( () => createDropTable() )();
+db.transaction(() => createDropTable())();
 
 function createIndexes() {
   db.exec(`

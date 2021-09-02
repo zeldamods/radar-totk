@@ -26,7 +26,7 @@ function getQueryParamStr(req: express.Request, name: string) {
   return param.toString();
 }
 
-function parseResult(result: any): {[key: string]: any} {
+function parseResult(result: any): { [key: string]: any } {
   if (!result)
     return {};
 
@@ -41,7 +41,7 @@ function parseResult(result: any): {[key: string]: any} {
   result.hard_mode = result.hard_mode ? true : undefined;
   // Most objects do not have DisableRankUpForMasterMode set, so don't include it unless it is set.
   result.disable_rankup_for_hard_mode = result.disable_rankup_for_hard_mode ? true : undefined;
-  result.pos = [Math.round(result.data.Translate[0]*100)/100, Math.round(result.data.Translate[2]*100)/100];
+  result.pos = [Math.round(result.data.Translate[0] * 100) / 100, Math.round(result.data.Translate[2] * 100) / 100];
   return result;
 }
 
@@ -83,11 +83,11 @@ app.get('/obj/:map_type/:map_name/:hash_id/gen_group', (req, res) => {
           WHERE map_type = @map_type
             AND map_name = @map_name
             AND hash_id = @hash_id LIMIT 1)`)
-  .all({
-    map_type: req.params.map_type,
-    map_name: req.params.map_name,
-    hash_id: parseInt(req.params.hash_id, 0),
-  }).map(parseResult);
+    .all({
+      map_type: req.params.map_type,
+      map_name: req.params.map_name,
+      hash_id: parseInt(req.params.hash_id, 0),
+    }).map(parseResult);
   if (!result.length)
     return res.status(404).json([]);
   res.json(result);
@@ -95,10 +95,10 @@ app.get('/obj/:map_type/:map_name/:hash_id/gen_group', (req, res) => {
 
 // Returns minimal object data for all matching objects.
 function handleReqObjs(req: express.Request, res: express.Response) {
-  const mapType: string|undefined = req.params.map_type;
-  const mapName: string|undefined = req.params.map_name;
+  const mapType: string | undefined = req.params.map_type;
+  const mapName: string | undefined = req.params.map_name;
   const withMapNames: boolean = !!req.query.withMapNames;
-  const q: string|null = getQueryParamStr(req, "q");
+  const q: string | null = getQueryParamStr(req, "q");
   const limitStr = getQueryParamStr(req, "limit");
   const limit: number = limitStr != null ? parseInt(limitStr, 10) : -1;
   if (!q) {
@@ -135,9 +135,9 @@ app.get('/objs/:map_type/:map_name', handleReqObjs);
 
 // Returns object IDs for all matching objects.
 function handleReqObjids(req: express.Request, res: express.Response) {
-  const mapType: string|undefined = req.params.map_type;
-  const mapName: string|undefined = req.params.map_name;
-  const q: string|null = getQueryParamStr(req, "q");
+  const mapType: string | undefined = req.params.map_type;
+  const mapName: string | undefined = req.params.map_name;
+  const q: string | null = getQueryParamStr(req, "q");
   if (!q) {
     res.json([]);
     return;
@@ -160,33 +160,33 @@ function handleReqObjids(req: express.Request, res: express.Response) {
 app.get('/objids/:map_type', handleReqObjids);
 app.get('/objids/:map_type/:map_name', handleReqObjids);
 
-function handleReqDropTable(req: express.Request, res:express.Response) {
+function handleReqDropTable(req: express.Request, res: express.Response) {
   const actorName: string | undefined = req.params.actor_name; // Matches unit_config_name in table objs
   const tableName: string | undefined = req.params.table_name;
   let rows = [];
-  if(actorName) {
-    if(tableName) {
-      if(tableName == "NoDrop") {
+  if (actorName) {
+    if (tableName) {
+      if (tableName == "NoDrop") {
         // Does NoDrop really mean it does not drop anything?
         const stmt = db.prepare(`SELECT data, name from drop_table where
           actor_name = ? and name = ? `);
-        rows = stmt.all( actorName, tableName );
+        rows = stmt.all(actorName, tableName);
       } else {
         // Get specific Drop Tables for actorName (Normal* and specific)
         //   Unknown tablenames will only return Normal*
         const stmt = db.prepare(`SELECT data, name from drop_table where
           actor_name = ? and ( name = 'Normal' or name like 'Normal_' or name = ? )`);
-        rows = stmt.all( actorName, tableName );
+        rows = stmt.all(actorName, tableName);
       }
     } else {
       // Get all Drop Tables for unitConfigName
       const stmt = db.prepare(`SELECT data, name from drop_table where
         actor_name = ? `);
-      rows = stmt.all( actorName );
+      rows = stmt.all(actorName);
     }
-    rows = rows.reduce((acc, cur) => ({ ...acc,[cur.name]: JSON.parse(cur.data)}), {});
+    rows = rows.reduce((acc, cur) => ({ ...acc, [cur.name]: JSON.parse(cur.data) }), {});
   }
-  res.json( rows );
+  res.json(rows);
 }
 
 app.get('/drop/:actor_name/:table_name', handleReqDropTable);
