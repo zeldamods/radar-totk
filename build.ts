@@ -35,6 +35,7 @@ const mapTower = new beco.Beco(path.join(util.APP_ROOT, 'content', 'ecosystem', 
 const towerNames = ["Hebra", "Tabantha", "Gerudo", "Wasteland", "Woodland",
   "Central", "Great Plateau", "Dueling Peaks", "Lake",
   "Eldin", "Akkala", "Lanayru", "Hateno", "Faron", "Ridgeland"];
+const fieldArea = new beco.Beco(path.join(util.APP_ROOT, 'content', 'ecosystem', 'FieldMapArea.beco'));
 
 // Create Special tags for YAML: !obj, !list, !io, !str64
 const objType = new yaml.Type('!obj', {
@@ -72,11 +73,17 @@ function readYAML(filePath: string) {
   return doc;
 }
 
-function getDropTableNameFromActorLinkFile(file: string) {
-  let doc = readYAML(file);
+function getDropTableNameFromActorLinkFile(doc: { [key: string]: any }): string | null {
   if ('DropTableUser' in doc.param_root.objects.LinkTarget) {
     let dropTableUser = doc.param_root.objects.LinkTarget.DropTableUser;
     return dropTableUser;
+  }
+  return null;
+}
+function getTagsFromActorLinkFile(doc: { [key: string]: any }): string[] | null {
+  if ('Tags' in doc.param_root.objects) {
+    let tags = doc.param_root.objects.Tags;
+    return Object.values(tags);
   }
   return null;
 }
@@ -106,21 +113,7 @@ function readDropTablesByName(table: string) {
   return readDropTableFile(path.join(botwData, 'DropTable', `${table}.drop.yml`));
 }
 
-function readDropTables() {
-  let lootTables: { [key: string]: any } = {}; // { unitConfigName: dropTableFilename }
-  // Read all files in content/ActorLink directory
-  let dirPath = path.join(botwData, 'ActorLink');
-  let files = fs.readdirSync(dirPath);
-  files.forEach(file => {
-    let filePath = path.join(botwData, 'ActorLink', file);
-    let tableName = getDropTableNameFromActorLinkFile(filePath);
-    if (tableName) {
-      let actorName = path.basename(file, '.yml'); // ==> UnitConfigName
-      lootTables[actorName] = tableName;
-    }
-  });
-
-  // Read Drop Table Data
+function readDropTables(lootTables: { [key: string]: string }) {
   let data: any[] = [];
   Object.keys(lootTables)
     .filter(name => lootTables[name] != "Dummy") // Ignore empty Dummy tables
@@ -131,8 +124,31 @@ function readDropTables() {
     });
   return data;
 }
+function readYAMLData(): [any[], { [key: string]: string[] }] {
+  let itemTags: { [key: string]: string[] } = {};
+  let lootTables: { [key: string]: string } = {};
 
-let dropData = readDropTables();
+  let dirPath = path.join(botwData, 'ActorLink');
+  let files = fs.readdirSync(dirPath);
+  files.forEach(file => {
+    let actorName = path.basename(file, '.yml'); // ==> UnitConfigName
+    let filePath = path.join(botwData, 'ActorLink', file);
+    let doc = readYAML(filePath);
+    let tableName = getDropTableNameFromActorLinkFile(doc);
+    if (tableName) {
+      lootTables[actorName] = tableName;
+    }
+    let tags = getTagsFromActorLinkFile(doc);
+    if (tags) {
+      itemTags[actorName] = tags;
+    }
+  });
+
+  let dropData: any[] = readDropTables(lootTables);
+  return [dropData, itemTags];
+}
+
+let [dropData, itemTags] = readYAMLData();
 
 const db = sqlite3('map.db.tmp');
 db.pragma('journal_mode = WAL');
@@ -159,7 +175,9 @@ db.exec(`
    ui_drop TEXT,
    ui_equip TEXT,
    messageid TEXT,
-   region TEXT NOT NULL
+   region TEXT NOT NULL,
+   field_area INTEGER,
+   spawns_with_lotm BOOL
   );
 `);
 
@@ -172,11 +190,10 @@ db.exec(`
 `);
 
 
-
 const insertObj = db.prepare(`INSERT INTO objs
-  (map_type, map_name, map_static, gen_group, hash_id, unit_config_name, ui_name, data, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, 'drop', equip, ui_drop, ui_equip, messageid, region)
+  (map_type, map_name, map_static, gen_group, hash_id, unit_config_name, ui_name, data, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, 'drop', equip, ui_drop, ui_equip, messageid, region, field_area, spawns_with_lotm)
   VALUES
-  (@map_type, @map_name, @map_static, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @one_hit_mode, @last_boss_mode, @hard_mode, @disable_rankup_for_hard_mode, @scale, @sharp_weapon_judge_type, @drop, @equip, @ui_drop, @ui_equip, @messageid, @region)`);
+  (@map_type, @map_name, @map_static, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @one_hit_mode, @last_boss_mode, @hard_mode, @disable_rankup_for_hard_mode, @scale, @sharp_weapon_judge_type, @drop, @equip, @ui_drop, @ui_equip, @messageid, @region, @field_area, @spawns_with_lotm)`);
 
 function getActorData(name: string) {
   const h = CRC32.str(name) >>> 0;
@@ -285,6 +302,16 @@ function processMap(pmap: PlacementMap, isStatic: boolean): void {
     if (!obj.data.UnitConfigName.startsWith('Weapon_') && !obj.data.UnitConfigName.startsWith('Enemy_'))
       scale = null;
 
+    let area = -1;
+    if (pmap.type == 'MainField') {
+      area = fieldArea.getCurrentAreaNum(obj.data.Translate[0], obj.data.Translate[2]);
+    }
+    let lotm = false;
+    let objTags = itemTags[obj.data.UnitConfigName];
+    if (area == 64 && objTags) {
+      lotm = objTags.includes('UnderGodForest');
+    }
+
     const result = insertObj.run({
       map_type: pmap.type,
       map_name: pmap.name,
@@ -306,6 +333,8 @@ function processMap(pmap: PlacementMap, isStatic: boolean): void {
       ui_equip: params ? objGetUiEquipment(params) : null,
       messageid: params ? (params['MessageID'] || null) : null,
       region: pmap.type == 'MainField' ? towerNames[mapTower.getCurrentAreaNum(obj.data.Translate[0], obj.data.Translate[2])] : "",
+      field_area: area >= 0 ? area : null,
+      spawns_with_lotm: lotm ? 1 : 0,
     });
     hashIdToObjIdMap.set(obj.data.HashId, result.lastInsertRowid);
   }
@@ -361,10 +390,10 @@ createIndexes();
 
 function createFts() {
   db.exec(`
-    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static, region);
+    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static, region, fieldarea, lotm);
 
-    INSERT INTO objs_fts(rowid, map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static, region)
-    SELECT objid, map_type||'/'||map_name, unit_config_name, ui_name, data, ui_drop, ui_equip, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, map_static, region FROM objs;
+    INSERT INTO objs_fts(rowid, map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static, region, fieldarea, lotm)
+    SELECT objid, map_type||'/'||map_name, unit_config_name, ui_name, data, ui_drop, ui_equip, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, map_static, region, field_area, spawns_with_lotm FROM objs;
   `);
 }
 console.log('creating FTS tables...');
