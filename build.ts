@@ -182,7 +182,8 @@ db.exec(`
    region TEXT NOT NULL,
    field_area INTEGER,
    spawns_with_lotm BOOL,
-   korok_id TEXT
+   korok_id TEXT,
+   korok_type TEXT
   );
 `);
 
@@ -196,9 +197,9 @@ db.exec(`
 
 
 const insertObj = db.prepare(`INSERT INTO objs
-  (map_type, map_name, map_static, gen_group, hash_id, unit_config_name, ui_name, data, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, 'drop', equip, ui_drop, ui_equip, messageid, region, field_area, spawns_with_lotm, korok_id)
+  (map_type, map_name, map_static, gen_group, hash_id, unit_config_name, ui_name, data, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, 'drop', equip, ui_drop, ui_equip, messageid, region, field_area, spawns_with_lotm, korok_id, korok_type)
   VALUES
-  (@map_type, @map_name, @map_static, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @one_hit_mode, @last_boss_mode, @hard_mode, @disable_rankup_for_hard_mode, @scale, @sharp_weapon_judge_type, @drop, @equip, @ui_drop, @ui_equip, @messageid, @region, @field_area, @spawns_with_lotm, @korok_id)`);
+  (@map_type, @map_name, @map_static, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @one_hit_mode, @last_boss_mode, @hard_mode, @disable_rankup_for_hard_mode, @scale, @sharp_weapon_judge_type, @drop, @equip, @ui_drop, @ui_equip, @messageid, @region, @field_area, @spawns_with_lotm, @korok_id, @korok_type)`);
 
 function getActorData(name: string) {
   const h = CRC32.str(name) >>> 0;
@@ -286,6 +287,173 @@ function objGetUiEquipment(params: any) {
   return objGetEquipment(params).map(getUiName).join(', ');
 }
 
+function hasLiftRock(group: any[]) {
+  return group.map(objGetUiName)
+    .some(name => name.includes("LiftRock") && !name.includes("Korok"));
+}
+
+function arrayEquals(a: string[], b: string[]): boolean {
+  if (a.length != b.length) {
+    return false;
+  }
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function korokGetType(group: any[], obj: any): string {
+  let len = group.length;
+  let names: string[] = group.map(objGetUiName);
+  names.sort();
+
+  if (hasLiftRock(group)) {
+    switch (len) {
+      case 7: return "Rock Lift"; // 174
+      case 9:
+        return "Rock Lift (Rock Pile)"; // 40
+      case 11:
+        if (names.includes("Treasure Chest")) {
+          return "Rock Lift (Rock Pile)"; // 1
+        }
+        if (names.includes("Obj_BoardIron_C_01")) {
+          return "Rock Lift (Door)"; // 8
+        }
+        if (names.includes("FldObj_PushRock_A_M_01")) {
+          return "Rock Lift (Boulder)"; // 6
+        }
+        return "Rock Lift (Slab)"; // 21
+      case 23:
+        return "Rock Lift (Leaves)"; // 19
+      case 14:
+      case 22:
+      case 30:
+        return "Rock Pattern"; // 72
+      default:
+        break;
+    }
+  }
+  if (names.includes("FldObj_KorokPinwheel_A_01")) { // 56
+    switch (len) {
+      case 5: return "Stationary Lights";
+      case 15: return "Pinwheel Balloons";
+      case 23: return "Pinwheel Balloons";
+      case 27: return "Pinwheel Acorns";
+      case 31: return "Pinwheel Balloons";
+      case 46: return "Pinwheel Acorns";
+      case 64: return "Pinwheel Acorns";
+      default:
+        break;
+    }
+  }
+
+  let identifiers: { [key: string]: string } = {
+    "Obj_Plant_KorokColor_A_01": "Flower Order",                       // 11
+    "Obj_Plant_Korok_A_01": "Flower Trail",                            // 46
+    "FldObj_RuinStonePavement_A_06": "Offering Plate",                 // 27 + 1 (egg)
+    "Obj_KorokPlate_A_01": "Offering Plate",                           //
+    "FldObj_KorokGoal_A_01": "Goal Ring (Race)",                       // 51
+    "Obj_TreeCactusMini_A_01": "Matching Trees",                       // 5
+    "Obj_TreeDorian_A_01": "Matching Trees",                           // 3
+    "Obj_Plant_IvyBurn_A_01": "Burn the Leaves (Goatee)",              // 1
+    "FidObj_TorchStandOff_A_01": "Light Torch",                        // 1
+    "Tree Branch": "Take the Stick",                                   // 1
+    "Luminous Stone": "Remove Luminous Stone",                         // 1
+    "YabusameBow": "Shoot the Targets",                                // 1
+    "TwnObj_Village_FishingHouse_S_A_02": "Take Apple from Palm Tree", // 1
+    "Obj_TreeApple_A_M_01": "Matching Trees",                          // 12
+    "SignalFlowchart": "Jump the Fences",                              // 2
+    "Obj_BoxIron_A_M_01": "Rock Pattern",                              // 1 "Arrange Metal cubes under water"
+    "BrokenSnowBall": "Roll a Boulder",                                // 2 "Push Snowball in Hole"
+    "IceWall": "Melt Ice Block",                                       // 18
+    "PointWindSetTag": "Roll a Boulder",                               // 1 "Push Boulder into Hole off Pillar"
+  };
+
+  if (len == 1) {
+    if ('LinksToRail' in group[0].data) {
+      return "Moving Lights"; // 39
+    }
+    return "Stationary Lights"; // 46
+  }
+  for (const name of names) {
+    if (name in identifiers) {
+      return identifiers[name];
+    }
+  }
+  if (names.includes("Obj_KorokPot_A_01")) {
+    if (names.length == 6) {
+      return "Acorn in a Hole"; // 29
+    }
+    return "Hanging Acorn"; // 14
+  }
+  if (names.includes("FldObj_ChainEyeBolt_A_01")) { // Must follow Acorn
+    return "Ball and Chain"; // 14
+  }
+  if (names.includes("FldObj_KorokTarget_A_01")) { // Must follow Acorn
+    return "Stationary Balloon"; // 26
+  }
+  if (len == 21 && names.includes("FldObj_KorokStoneLift_A_01") && names.includes("FldObj_KorokStone_A_01")) {
+    return "Cube Puzzle"; // 66
+  }
+  if (arrayEquals(names, ['ActorObserverTag', 'Area', 'Area', 'FldObj_PushRock_Korok', 'FldObj_PushRock_Korok',
+    'FldObj_PushRock_Korok', 'Korok', 'KorokAnswerResponce', 'LinkTagAnd', 'LinkTagAnd',
+    'LinkTagNone', 'LinkTagOr', 'LinkTagOr', 'SwitchTimeLag'])) {
+    return "Roll a Boulder"; // 1 Must preceed Push Boulder into Hole
+  }
+  if (names.includes("FldObj_PushRock_A_M_01")) {
+    return "Roll a Boulder";
+  }
+  if (names.includes("FldObj_PushRock_Korok")) {
+    return "Roll a Boulder";
+  }
+  if (names.includes("Obj_KorokIronRock_A_01")) {
+    return "Ball and Chain";
+  }
+  if (names.includes("FldObj_PushRockIron_A_M_01")) {
+    return "Roll a Boulder"; // Must follow Boulder Between Trees
+  }
+  // Specific Korok Types without Specific Tags
+
+  if (arrayEquals(names, ['Area', 'Korok', 'LinkTagOr', 'LinkTagOr'])) {
+    return "Stationary Lights"; // 41
+  }
+  if (arrayEquals(names, ['Area', 'Korok', 'LinkTagAnd', 'LinkTagOr'])) {
+    return "Dive"; // 35
+  }
+  if (arrayEquals(names, ['ActorObserverTag', 'ActorObserverTag', 'ActorObserverTag', 'Area', 'Korok',
+    'KorokAnswerResponce', 'LinkTagAnd', 'LinkTagAnd', 'LinkTagOr', 'LinkTagOr', 'SwitchTimeLag'])) {
+    return "Circle of Rocks"; // 20
+  }
+  if (arrayEquals(names, ['ActorObserverByGroupTag', 'Area', 'Area', 'Korok', 'LinkTagAnd', 'LinkTagAnd',
+    'LinkTagNAnd', 'LinkTagOr'])) {
+    return "Shoot the Crest"; // 4
+  }
+  if (arrayEquals(names, ['ActorObserverTag', 'ActorObserverTag', 'Area', 'Area', 'Korok',
+    'KorokAnswerResponce', 'KorokAnswerResponce', 'LinkTagAnd', 'LinkTagAnd', 'LinkTagAnd',
+    'LinkTagOr', 'SwitchTimeLag'])) {
+    return "Ball and Chain"; // 1
+  }
+  if (arrayEquals(names, ['ActorObserverTag', 'ActorObserverTag', 'ActorObserverTag', 'Area',
+    'Area', 'Area', 'Korok', 'LinkTagAnd', 'LinkTagAnd', 'LinkTagOr', 'SwitchTimeLag'])) {
+    return "Offering Plate"; //Put Egg in Water"; 1
+  }
+  if (arrayEquals(names, ['ActorObserverTag', 'Area', 'Area', 'Korok', 'KorokAnswerResponce',
+    'LinkTagAnd', 'LinkTagAnd', 'LinkTagAnd', 'LinkTagNone', 'LinkTagOr', 'SwitchTimeLag'])) {
+    return "Roll a Boulder"; //"Push Boulder into Hole"; // 6
+  }
+  if (arrayEquals(names, ['Korok', 'LinkTagAnd', 'LinkTagAnd', 'LinkTagAnd', 'LinkTagNAnd'])) {
+    return "Stationary Lights"; //"Shrine of Resurrection"; // 1
+  }
+
+  console.error(names);
+  console.error(len);
+  console.error(`Unhandled Korok Type: ${objGetUiName(obj)} ${obj.data.HashId}`);
+  process.exit(1);
+}
+
+
 function processMap(pmap: PlacementMap, isStatic: boolean): void {
   process.stdout.write(`processing ${pmap.type}/${pmap.name} (static: ${isStatic})`);
   const hashIdToObjIdMap: Map<number, any> = new Map();
@@ -320,6 +488,11 @@ function processMap(pmap: PlacementMap, isStatic: boolean): void {
     if (obj.data.HashId in korok_ids) {
       korok = korok_ids[obj.data.HashId].id;
     }
+    let korok_type = null;
+    if (objGetUiName(obj) == "Korok") {
+      let group = genGroups.get(obj.genGroupId)!;
+      korok_type = korokGetType(group, obj);
+    }
 
     const result = insertObj.run({
       map_type: pmap.type,
@@ -345,6 +518,7 @@ function processMap(pmap: PlacementMap, isStatic: boolean): void {
       field_area: area >= 0 ? area : null,
       spawns_with_lotm: lotm ? 1 : 0,
       korok_id: korok ? korok : null,
+      korok_type: korok_type,
     });
     hashIdToObjIdMap.set(obj.data.HashId, result.lastInsertRowid);
   }
@@ -398,12 +572,83 @@ function createIndexes() {
 console.log('creating indexes...');
 createIndexes();
 
+
+function checkKorokTypes() {
+  const counts = {                  // Notes based on https://lepelog.github.io/korokmap/
+    "Moving Lights": 39,            //
+    "Stationary Lights": 51,        //
+    "Rock Lift (Door)": 8,          //
+    "Rock Lift (Boulder)": 6,       //
+    "Rock Lift (Rock Pile)": 41,    // Z54 is under Rock Pile
+    "Rock Lift (Slab)": 12,         //
+    "Rock Lift": 174,               //
+    "Rock Pattern": 73,             // C51, L34, and N13 are not Rock Patterns
+    "Cube Puzzle": 66,              //
+    "Goal Ring (Race)": 51,         //
+    "Flower Trail": 46,             //
+    "Pinwheel Balloons": 44,        //
+    "Dive": 35,                     //
+    "Acorn in a Hole": 29,          //
+    "Roll a Boulder": 31,           // C51, L34, and N13 are not Rock Patterns but Push Boulder
+    "Offering Plate": 28,           // 27 + 1 (egg)
+    "Stationary Balloon": 26,       //
+    "Circle of Rocks": 20,          //
+    "Matching Trees": 20,           //
+    "Rock Lift (Leaves)": 19,       //
+    "Melt Ice Block": 18,           //
+    "Ball and Chain": 16,           //
+    "Hanging Acorn": 14,            //
+    "Flower Order": 11,             //
+    "Pinwheel Acorns": 10,          //
+    "Shoot the Crest": 4,           //
+    "Jump the Fences": 2,           //
+    "Light Torch": 1,               //
+    "Burn the Leaves (Goatee)": 1,  //
+    "Take the Stick": 1,            //
+    "Shoot the Targets": 1,         //
+    "Take Apple from Palm Tree": 1, //
+    "Remove Luminous Stone": 1,     //
+  };
+  // Check the number of koroks in each category
+  let expectedNum = 0;
+  const stmt = db.prepare("select count(korok_type) as num from objs where korok_type = @kt");
+  for (const [key, num] of Object.entries(counts)) {
+    const res = stmt.all({ kt: key });
+
+    if (res.length != 1) {
+      console.error(`Expected a single value, got ${res}, ${res.length}`);
+      process.exit(1);
+    }
+    let out = res[0].num;
+    if (out != num) {
+      console.error(`Number of korok types mismatch: ${key}: expected ${num} returned ${out}`);
+      process.exit(1);
+    }
+    expectedNum += out;
+  }
+  // Check we have 900 koroks
+  if (expectedNum != 900) {
+    console.error(`Error: Expected 900 koroks, got ${expectedNum}`);
+    process.exit(1);
+  }
+  // Checking for unknown korok types
+  const res = db.prepare("select distinct(korok_type) as name from objs where korok_type is not NULL").all();
+  const names = res.map(row => row.name);
+  if (names.some(name => !(name in counts))) {
+    const ktypes = names.filter(name => !(name in counts));
+    console.error(`Error: Unknown korok types: ${ktypes}`);
+    process.exit(1);
+  }
+}
+console.log("checking korok types ...");
+checkKorokTypes();
+
 function createFts() {
   db.exec(`
-    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static, region, fieldarea, lotm, korok);
+    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static, region, fieldarea, lotm, korok, korok_type);
 
-    INSERT INTO objs_fts(rowid, map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static, region, fieldarea, lotm, korok)
-    SELECT objid, map_type||'/'||map_name, unit_config_name, ui_name, data, ui_drop, ui_equip, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, map_static, region, field_area, spawns_with_lotm, korok_id FROM objs;
+    INSERT INTO objs_fts(rowid, map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static, region, fieldarea, lotm, korok, korok_type)
+    SELECT objid, map_type || '/' || map_name, unit_config_name, ui_name, data, ui_drop, ui_equip, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, map_static, region, field_area, spawns_with_lotm, korok_id, korok_type FROM objs;
   `);
 }
 console.log('creating FTS tables...');
