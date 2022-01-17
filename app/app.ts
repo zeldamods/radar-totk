@@ -41,7 +41,7 @@ function parseResult(result: any): { [key: string]: any } {
   result.hard_mode = result.hard_mode ? true : undefined;
   // Most objects do not have DisableRankUpForMasterMode set, so don't include it unless it is set.
   result.disable_rankup_for_hard_mode = result.disable_rankup_for_hard_mode ? true : undefined;
-  result.pos = result.data.Translate.map(v => Math.round(v * 100) / 100);
+  result.pos = result.data.Translate.map((v: number) => Math.round(v * 100) / 100);
   result.korok_id = result.korok_id || undefined;
   result.korok_type = result.korok_type || undefined;
   return result;
