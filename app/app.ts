@@ -168,18 +168,12 @@ function handleReqDropTable(req: express.Request, res: express.Response) {
   let rows = [];
   if (actorName) {
     if (tableName) {
-      if (tableName == "NoDrop") {
-        // Does NoDrop really mean it does not drop anything?
-        const stmt = db.prepare(`SELECT data, name from drop_table where
-          actor_name = ? and name = ? `);
-        rows = stmt.all(actorName, tableName);
-      } else {
-        // Get specific Drop Tables for actorName (Normal* and specific)
-        //   Unknown tablenames will only return Normal*
-        const stmt = db.prepare(`SELECT data, name from drop_table where
-          actor_name = ? and ( name = 'Normal' or name like 'Normal_' or name = ? )`);
-        rows = stmt.all(actorName, tableName);
-      }
+      // Replace NormalArrow with Normal
+      let dropTableName = (tableName == "NormalArrow") ? "Normal" : tableName;
+      // Drop tables selected if drop_table.name starts with tableName prefix
+      const stmt = db.prepare(`SELECT data, name from drop_table where
+           actor_name = ? and name like ? `);
+      rows = stmt.all(actorName, `${dropTableName}%`);
     } else {
       // Get all Drop Tables for unitConfigName
       const stmt = db.prepare(`SELECT data, name from drop_table where
