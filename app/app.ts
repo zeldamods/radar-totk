@@ -44,10 +44,11 @@ function parseResult(result: any): { [key: string]: any } {
   result.pos = result.data.Translate.map((v: number) => Math.round(v * 100) / 100);
   result.korok_id = result.korok_id || undefined;
   result.korok_type = result.korok_type || undefined;
+  result.location = result.location || undefined;
   return result;
 }
 
-const FIELDS = 'objid, map_type, map_name, map_static, hash_id, unit_config_name as name, `drop`, equip, data, messageid, scale, sharp_weapon_judge_type, hard_mode, disable_rankup_for_hard_mode, spawns_with_lotm, field_area, korok_id, korok_type, one_hit_mode';
+const FIELDS = 'objid, map_type, map_name, map_static, hash_id, unit_config_name as name, `drop`, equip, data, messageid, scale, sharp_weapon_judge_type, hard_mode, disable_rankup_for_hard_mode, spawns_with_lotm, field_area, korok_id, korok_type, one_hit_mode, location';
 
 // Returns object details for an object.
 app.get('/obj/:objid', (req, res) => {
