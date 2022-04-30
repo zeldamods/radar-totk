@@ -526,7 +526,7 @@ function processMap(pmap: PlacementMap, isStatic: boolean): void {
       spawns_with_lotm: lotm ? 1 : 0,
       korok_id: korok ? korok : null,
       korok_type: korok_type,
-      location: location
+      location: location,
     });
     hashIdToObjIdMap.set(obj.data.HashId, result.lastInsertRowid);
   }
