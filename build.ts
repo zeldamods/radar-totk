@@ -34,6 +34,8 @@ const korok_data: [any] = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, 'k
 let korok_ids: any = {};
 korok_data.forEach(k => { korok_ids[k.hash_id] = k; });
 
+const polys = JSON.parse(fs.readFileSync(path.join(util.APP_ROOT, "castle.json"), 'utf-8'));
+
 const mapTower = new beco.Beco(path.join(util.APP_ROOT, 'content', 'ecosystem', 'MapTower.beco'));
 // Tower Names taken from Messages/Msg_USen.product.sarc/StaticMsg/LocationMarker.msyt Tower01 - Tower15
 const towerNames = ["Hebra", "Tabantha", "Gerudo", "Wasteland", "Woodland",
@@ -456,6 +458,98 @@ function korokGetType(group: any[], obj: any): string {
   process.exit(1);
 }
 
+// Check is a point (x,y,z) is contained within a polygon's bounding box
+//   Bounding box is defined in properties (xmin, xmax, zmin, zmax)
+function isPointInsideBoundingBox(poly: any, pt: any): boolean {
+  let prop = poly.properties;
+  return ((prop.xmin && pt[0] >= prop.xmin) ||
+    (prop.zmin && pt[2] >= prop.zmin) ||
+    (prop.xmax && pt[0] <= prop.xmax) ||
+    (prop.zmax && pt[2] <= prop.zmax));
+}
+
+// Check is a point (x,y,z) is contained within a polygon
+//   The bounding box is first checked then the polygon is checked
+function isPointInsidePolygon(poly: any, pt: any): boolean {
+  return isPointInsideBoundingBox(poly, pt) && isPointInsidePolygonRCA(pt, poly.geometry.coordinates[0]);
+}
+
+// Check if a point is within a polygon (pts)
+//  https://en.wikipedia.org/wiki/Point_in_polygon#Ray_casting_algorithm
+function isPointInsidePolygonRCA(point: any, pts: any) {
+  let n = pts.length;
+  let xp = point[0];
+  let yp = point[2];
+  let xv: any = pts.map((p: any) => p[0]);
+  let yv: any = pts.map((p: any) => p[1]);
+
+  if (Math.abs(xv[0] - xv[n - 1]) < 1e-7 && Math.abs(yv[0] - yv[n - 1]) < 1e-7) {
+    n -= 1;
+  }
+  let x2 = xv[n - 1]
+  let y2 = yv[n - 1]
+  let nleft = 0
+
+  let x1 = x2;
+  let y1 = y2;
+
+  // Loop over line segments (assuming the polygon is closed)
+  for (let i = 0; i < n; i++) {
+    x1 = x2
+    y1 = y2
+    x2 = xv[i]
+    y2 = yv[i]
+    if (y1 >= yp && y2 >= yp) {
+      continue;
+    }
+    if (y1 < yp && y2 < yp) {
+      continue;
+    }
+    if (y1 == y2) {
+      if (x1 >= xp && x2 >= xp) {
+        continue;
+      }
+      if (x1 < xp && x2 < xp) {
+        continue;
+      }
+      nleft += 1;
+    } else {
+      let xi = x1 + (yp - y1) * (x2 - x1) / (y2 - y1);
+      if (xi == xp) {
+        nleft = 1;
+        break;
+      }
+      if (xi > xp) {
+        nleft += 1;
+      }
+    }
+  }
+  let xin = nleft % 2;
+  return xin == 1;
+}
+
+// Test all polygons (polys) if a point lies in any
+//    polygons are assumed to be in GeoJSON format and have:
+//      - a bounding box (xmin,ymin,zmin,xmax,ymax,zmax)
+//      - a priority where overlapping polygons with higher priority are chosen
+//    Returns the found polygon or null in the case of no match
+function findPolygon(p: any, polys: any) {
+  let found = null;
+  for (let j = 0; j < polys.features.length; j++) {
+    const poly = polys.features[j];
+    if ((poly.properties.ymin && p[1] < poly.properties.ymin) ||
+      (poly.properties.ymax && p[1] > poly.properties.ymax)) {
+      continue;
+    }
+    if (found && poly.properties.priority < found.properties.priority) {
+      continue;
+    }
+    if (isPointInsidePolygon(poly, p)) {
+      found = polys.features[j];
+    }
+  }
+  return found;
+}
 
 function processMap(pmap: PlacementMap, isStatic: boolean): void {
   process.stdout.write(`processing ${pmap.type}/${pmap.name} (static: ${isStatic})`);
@@ -499,6 +593,12 @@ function processMap(pmap: PlacementMap, isStatic: boolean): void {
     let location = null;
     if (obj.data.HashId in locations) {
       location = locations[obj.data.HashId];
+    }
+
+    let location = null;
+    let poly = findPolygon(obj.data.Translate, polys);
+    if (poly) {
+      location = poly.properties.name;
     }
 
     const result = insertObj.run({
