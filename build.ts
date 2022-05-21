@@ -595,7 +595,6 @@ function processMap(pmap: PlacementMap, isStatic: boolean): void {
       location = locations[obj.data.HashId];
     }
 
-    let location = null;
     let poly = findPolygon(obj.data.Translate, polys);
     if (poly) {
       location = poly.properties.name;
