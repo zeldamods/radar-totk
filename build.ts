@@ -200,11 +200,19 @@ db.exec(`
   );
 `);
 
+db.exec(`
+   CREATE TABLE rails (
+      hash_id INTEGER NOT NULL,
+      data JSON
+   );
+`);
 
 const insertObj = db.prepare(`INSERT INTO objs
   (map_type, map_name, map_static, gen_group, hash_id, unit_config_name, ui_name, data, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, 'drop', equip, ui_drop, ui_equip, messageid, region, field_area, spawns_with_lotm, korok_id, korok_type, location)
   VALUES
   (@map_type, @map_name, @map_static, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @one_hit_mode, @last_boss_mode, @hard_mode, @disable_rankup_for_hard_mode, @scale, @sharp_weapon_judge_type, @drop, @equip, @ui_drop, @ui_equip, @messageid, @region, @field_area, @spawns_with_lotm, @korok_id, @korok_type, @location)`);
+
+const insertRail = db.prepare(`INSERT INTO rails (hash_id, data) VALUES (@hash_id, @data)`);
 
 function getActorData(name: string) {
   const h = CRC32.str(name) >>> 0;
@@ -630,6 +638,9 @@ function processMap(pmap: PlacementMap, isStatic: boolean): void {
     hashIdToObjIdMap.set(obj.data.HashId, result.lastInsertRowid);
   }
 
+  for (const rail of pmap.getRails()) {
+    insertRail.run({ hash_id: rail.data.HashId, data: JSON.stringify(rail.data) });
+  }
   process.stdout.write('.\n');
 }
 

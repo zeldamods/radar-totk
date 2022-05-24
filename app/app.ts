@@ -186,7 +186,36 @@ function handleReqDropTable(req: express.Request, res: express.Response) {
   res.json(rows);
 }
 
+function handleReqRailsTable(req: express.Request, res: express.Response) {
+
+  const DRAGON_ICE_HASHID = [0xe61a0932, 0x86b9a466];
+  const DRAGON_FIRE_HASHID = [0x54d56291, 0xfc79f706];
+  const DRAGON_ELECTRIC_HASHID = [0x4fb21727, 0xc119deb6];
+
+  const hashId: number = parseInt(req.params.hash_id, 0); // From objs LinksToRail -> DestUnitHashId
+
+  if (DRAGON_ICE_HASHID.includes(hashId)) {
+    const stmt = db.prepare(`select data from rails where data like '%Dragon_Ice_MainRoute%'`);
+    return res.json(stmt.all({}).map((row: any) => JSON.parse(row.data)));
+  }
+  if (DRAGON_FIRE_HASHID.includes(hashId)) {
+    const stmt = db.prepare(`select data from rails where data like '%Dragon_Fire_MainRoute%'`);
+    return res.json(stmt.all({}).map((row: any) => JSON.parse(row.data)));
+  }
+  if (DRAGON_ELECTRIC_HASHID.includes(hashId)) {
+    const stmt = db.prepare(`select data from rails where data like '%Dragon_Electric_%'`);
+    return res.json(stmt.all({}).map((row: any) => JSON.parse(row.data)));
+  }
+  const stmt = db.prepare(`select data from rails
+      join (
+          select json_extract(value,'$.DestUnitHashId') as rail_id from objs, json_each(objs.data, '$.LinksToRail') where hash_id = ?
+      ) as t on t.rail_id = rails.hash_id`)
+  let rows = stmt.all(hashId);
+  res.json(rows.map((row: any) => JSON.parse(row.data)));
+}
+
 app.get('/drop/:actor_name/:table_name', handleReqDropTable);
 app.get('/drop/:actor_name', handleReqDropTable);
+app.get('/rail/:hash_id', handleReqRailsTable);
 
 app.listen(3007);
