@@ -29,6 +29,16 @@ export class PlacementLink {
   ) { }
 }
 
+export interface ResRail {
+  readonly '!Parameters': { [key: string]: any };
+  readonly HashId: number;
+  readonly IsClosed: boolean;
+  readonly RailPoints: any[];
+}
+export class Rail {
+  constructor(public readonly data: ResRail) { }
+}
+
 export class PlacementMap {
   constructor(public type: string, public name: string, data: any) {
     this.data = data;
@@ -38,6 +48,9 @@ export class PlacementMap {
 
   getObjs() {
     return this.objs.values();
+  }
+  getRails() {
+    return this.rails.values();
   }
 
   getObj(hashid: number): PlacementObj {
@@ -82,8 +95,12 @@ export class PlacementMap {
         destObj.linksToSelf.push(new PlacementLink(obj, link, link.DefinitionName));
       }
     }
+    for (const obj of this.data.Rails) {
+      this.rails.set(obj.HashId, new Rail(obj));
+    }
   }
 
   private data: any;
   private objs: Map<number, PlacementObj> = new Map();
+  private rails: Map<number, Rail> = new Map();
 }
