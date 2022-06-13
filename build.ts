@@ -763,7 +763,7 @@ checkKorokTypes();
 
 function createFts() {
   db.exec(`
-    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static, region, fieldarea, lotm, korok, korok_type, location);
+    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", tokenize="trigram", map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static, region, fieldarea, lotm, korok, korok_type, location);
 
     INSERT INTO objs_fts(rowid, map, actor, name, data, 'drop', equip, onehit, lastboss, hard, no_rankup, scale, bonus, static, region, fieldarea, lotm, korok, korok_type, location)
     SELECT objid, map_type || '/' || map_name, unit_config_name, ui_name, data, ui_drop, ui_equip, one_hit_mode, last_boss_mode, hard_mode, disable_rankup_for_hard_mode, scale, sharp_weapon_judge_type, map_static, region, field_area, spawns_with_lotm, korok_id, korok_type, location FROM objs;
