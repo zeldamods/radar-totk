@@ -31,24 +31,16 @@ function parseResult(result: any): { [key: string]: any } {
     return {};
 
   result.data = JSON.parse(result.data);
-  result.drop = JSON.parse(result.drop) || undefined;
-  result.equip = JSON.parse(result.equip) || undefined;
-  if (!result.equip || !result.equip.length)
-    result.equip = undefined;
-  result.messageid = result.messageid || undefined;
-  result.scale = result.scale != null ? result.scale : undefined;
-  result.sharp_weapon_judge_type = result.sharp_weapon_judge_type != null ? result.sharp_weapon_judge_type : undefined;
-  result.hard_mode = result.hard_mode ? true : undefined;
-  // Most objects do not have DisableRankUpForMasterMode set, so don't include it unless it is set.
-  result.disable_rankup_for_hard_mode = result.disable_rankup_for_hard_mode ? true : undefined;
+  result.drop = JSON.parse(result.drops); // change from drops to drop
+  result.drops = undefined;
+
+  result.equip = JSON.parse(result.equip);
   result.pos = result.data.Translate.map((v: number) => Math.round(v * 100) / 100);
-  result.korok_id = result.korok_id || undefined;
-  result.korok_type = result.korok_type || undefined;
-  result.location = result.location || undefined;
+  result.Location = (result.data && result.data.Location) ? result.data.Location : undefined;
   return result;
 }
 
-const FIELDS = 'objid, map_type, map_name, map_static, hash_id, unit_config_name as name, `drop`, equip, data, messageid, scale, sharp_weapon_judge_type, hard_mode, disable_rankup_for_hard_mode, spawns_with_lotm, field_area, korok_id, korok_type, one_hit_mode, location';
+const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name as name, data, drops, equip, map_static';
 
 // Returns object details for an object.
 app.get('/obj/:objid', (req, res) => {
@@ -71,7 +63,7 @@ app.get('/obj/:map_type/:map_name/:hash_id', (req, res) => {
   const result = parseResult(stmt.get({
     map_type: req.params.map_type,
     map_name: req.params.map_name,
-    hash_id: parseInt(req.params.hash_id, 0),
+    hash_id: req.params.hash_id,
   }));
   if (!result.map_type)
     return res.status(404).json({});
@@ -89,7 +81,7 @@ app.get('/obj/:map_type/:map_name/:hash_id/gen_group', (req, res) => {
     .all({
       map_type: req.params.map_type,
       map_name: req.params.map_name,
-      hash_id: parseInt(req.params.hash_id, 0),
+      hash_id: req.params.hash_id,
     }).map(parseResult);
   if (!result.length)
     return res.status(404).json([]);
@@ -125,12 +117,13 @@ function handleReqObjs(req: express.Request, res: express.Response) {
 
   const stmt = db.prepare(query);
 
-  res.json(stmt.all({
+  const rows = stmt.all({
     map_type: mapType,
     map_name: mapName ? mapName : undefined,
     q,
     limit,
-  }).map(parseResult).map(getData));
+  });
+  res.json(rows.map(parseResult).map(getData))
 }
 
 app.get('/objs/:map_type', handleReqObjs);
@@ -163,59 +156,6 @@ function handleReqObjids(req: express.Request, res: express.Response) {
 app.get('/objids/:map_type', handleReqObjids);
 app.get('/objids/:map_type/:map_name', handleReqObjids);
 
-function handleReqDropTable(req: express.Request, res: express.Response) {
-  const actorName: string | undefined = req.params.actor_name; // Matches unit_config_name in table objs
-  const tableName: string | undefined = req.params.table_name;
-  let rows = [];
-  if (actorName) {
-    if (tableName) {
-      // Replace NormalArrow with Normal
-      let dropTableName = (tableName == "NormalArrow") ? "Normal" : tableName;
-      // Drop tables selected if drop_table.name starts with tableName prefix
-      const stmt = db.prepare(`SELECT data, name from drop_table where
-           actor_name = ? and name like ? `);
-      rows = stmt.all(actorName, `${dropTableName}%`);
-    } else {
-      // Get all Drop Tables for unitConfigName
-      const stmt = db.prepare(`SELECT data, name from drop_table where
-        actor_name = ? `);
-      rows = stmt.all(actorName);
-    }
-    rows = rows.reduce((acc, cur) => ({ ...acc, [cur.name]: JSON.parse(cur.data) }), {});
-  }
-  res.json(rows);
-}
 
-function handleReqRailsTable(req: express.Request, res: express.Response) {
-
-  const DRAGON_ICE_HASHID = [0xe61a0932, 0x86b9a466];
-  const DRAGON_FIRE_HASHID = [0x54d56291, 0xfc79f706];
-  const DRAGON_ELECTRIC_HASHID = [0x4fb21727, 0xc119deb6];
-
-  const hashId: number = parseInt(req.params.hash_id, 0); // From objs LinksToRail -> DestUnitHashId
-
-  if (DRAGON_ICE_HASHID.includes(hashId)) {
-    const stmt = db.prepare(`select data from rails where data like '%Dragon_Ice_MainRoute%'`);
-    return res.json(stmt.all({}).map((row: any) => JSON.parse(row.data)));
-  }
-  if (DRAGON_FIRE_HASHID.includes(hashId)) {
-    const stmt = db.prepare(`select data from rails where data like '%Dragon_Fire_MainRoute%'`);
-    return res.json(stmt.all({}).map((row: any) => JSON.parse(row.data)));
-  }
-  if (DRAGON_ELECTRIC_HASHID.includes(hashId)) {
-    const stmt = db.prepare(`select data from rails where data like '%Dragon_Electric_%'`);
-    return res.json(stmt.all({}).map((row: any) => JSON.parse(row.data)));
-  }
-  const stmt = db.prepare(`select data from rails
-      join (
-          select json_extract(value,'$.DestUnitHashId') as rail_id from objs, json_each(objs.data, '$.LinksToRail') where hash_id = ?
-      ) as t on t.rail_id = rails.hash_id`)
-  let rows = stmt.all(hashId);
-  res.json(rows.map((row: any) => JSON.parse(row.data)));
-}
-
-app.get('/drop/:actor_name/:table_name', handleReqDropTable);
-app.get('/drop/:actor_name', handleReqDropTable);
-app.get('/rail/:hash_id', handleReqRailsTable);
 
 app.listen(3007);
