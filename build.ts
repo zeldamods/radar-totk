@@ -20,7 +20,7 @@ db.exec(`
    objid INTEGER PRIMARY KEY,
    map_type TEXT NOT NULL,
    map_name TEXT NOT NULL,
-   gen_group TEXT,
+   gen_group INTEGER,
    hash_id TEXT UNIQUE,
    unit_config_name TEXT NOT NULL,
    ui_name TEXT NOT NULL,
@@ -113,7 +113,6 @@ function processBanc(filePath: string) {
     return;
   }
 
-  //console.log(Object.keys(
   for (const actor of doc.Actors) {
     let drops: any = [];
     let equip: any = [];
@@ -158,7 +157,7 @@ function processBanc(filePath: string) {
         merged: (isMerged) ? 1 : 0,
       });
     } catch (e) {
-      console.log("sqlite3 insert erro", actor.Hash);
+      console.log("sqlite3 insert error", actor.Hash);
       console.log(e);
       process.exit(1)
     }
@@ -211,6 +210,7 @@ function processBancsGG() {
   for (const hash of Object.keys(GG)) {
     stmt.run({ gen_group: GG[hash].toString(), hash: hash })
   }
+  db.prepare('UPDATE objs SET gen_group = rowid+(select max(gen_group) from objs) where gen_group is null').run();
 }
 
 
