@@ -231,10 +231,58 @@ function processBancsGG() {
   db.prepare('UPDATE objs SET gen_group = rowid+(select max(gen_group) from objs) where gen_group is null').run();
 }
 
+function processRecycleBox() {
+  const fields = ['NormalStage/RecycleBox',
+    'BossVehicle/RecycleBox',
+    'MinusField/RecycleBox',
+    'LargeDungeon/RecycleBox',
+    'MainField/RecycleBox',
+    'SmallDungeon/RecycleBox'
+  ];
+  for (const field of fields) {
+    const dirPath = path.join(totkData, field)
+    let files = fs.readdirSync(dirPath);
+    let stmt = db.prepare('UPDATE objs SET equip = @equip, ui_equip = @ui_equip where hash_id = @hash_id');
+    for (const file of files) {
+      if (!file.endsWith('recyclebox.yml')) {
+        continue;
+      }
+      let filePath = path.join(dirPath, file);
+      console.log("process recyclebox: ", filePath)
+      let doc: any = null;
+      try {
+        doc = yaml.load(fs.readFileSync(filePath, 'utf-8'),
+          { schema: schema });
+      } catch (e: any) {
+        console.log("Error: ", e);
+        process.exit(1);
+      }
+      for (const hash_id of Object.keys(doc)) {
+        const box = doc[hash_id];
+        let equip = [];
+        let ui_equip = [];
+        for (const item of box.Contents) {
+          equip.push(item);
+          const ui_name = getName(item);
+          if (ui_name != item) {
+            ui_equip.push(ui_name);
+          }
+        }
+        if (equip.length > 0) {
+          stmt.run({
+            hash_id: hash_id,
+            equip: JSON.stringify(equip),
+            ui_equip: JSON.stringify(ui_equip),
+          });
+        }
+      }
+    }
+  }
+}
 
 db.transaction(() => processBancs())();
 db.transaction(() => processBancsGG())();
-
+db.transaction(() => processRecycleBox())();
 
 function createIndexes() {
   db.exec(`
@@ -250,10 +298,10 @@ createIndexes();
 
 function createFts() {
   db.exec(`
-    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", tokenize="unicode61", map, actor, name, data, drops, ui_drops, equip, ui_equip);
+    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", tokenize="unicode61", map, actor, name, data, drops, ui_drops, equip, ui_equip, hash_id);
 
-    INSERT INTO objs_fts(rowid, map, actor, name, data, drops, ui_drops, equip, ui_equip )
-    SELECT objid, map_type || '/' || map_name, unit_config_name, ui_name, data, drops, ui_drops, equip, ui_equip FROM objs;
+    INSERT INTO objs_fts(rowid, map, actor, name, data, drops, ui_drops, equip, ui_equip, hash_id )
+    SELECT objid, map_type || '/' || map_name, unit_config_name, ui_name, data, drops, ui_drops, equip, ui_equip, hash_id FROM objs;
   `);
 }
 console.log('creating FTS tables...');

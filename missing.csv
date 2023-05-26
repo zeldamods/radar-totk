@@ -6719,36 +6719,36 @@ PlayerInAreaAutoEnemyForbidTag,
 Pot, 
 PreTraversePos, 
 PyramidObj_GerudoUndergroundStatue_A_02_LightSwitch, 
-RBox_Field_A, 
-RBox_Field_B, 
-RBox_Field_C, 
-RBox_Field_D, 
-RBox_Field_D_02, 
-RBox_Field_E, 
-RBox_Field_E_02, 
-RBox_Field_F, 
-RBox_Field_F_02, 
-RBox_Field_G, 
-RBox_Field_G_02, 
-RBox_Field_H, 
-RBox_Field_H_02, 
-RBox_Field_I, 
-RBox_Field_I_02, 
-RBox_Field_J, 
-RBox_Field_J_02, 
-RBox_Field_K, 
-RBox_Field_K_02, 
-RBox_Field_K_03, 
-RBox_Field_L, 
-RBox_Field_L_02, 
-RBox_Field_M, 
-RBox_Field_M_02, 
-RBox_Field_N, 
-RBox_Field_Q, 
-RBox_Field_R, 
-RBox_Field_R_02, 
-RBox_Field_S, 
-RBox_Field_T, 
+RBox_Field_A, Device Dispenser
+RBox_Field_B, Device Dispenser
+RBox_Field_C, Device Dispenser
+RBox_Field_D, Device Dispenser
+RBox_Field_D_02, Device Dispenser
+RBox_Field_E, Device Dispenser
+RBox_Field_E_02, Device Dispenser
+RBox_Field_F, Device Dispenser
+RBox_Field_F_02, Device Dispenser
+RBox_Field_G, Device Dispenser
+RBox_Field_G_02, Device Dispenser
+RBox_Field_H, Device Dispenser
+RBox_Field_H_02, Device Dispenser
+RBox_Field_I, Device Dispenser
+RBox_Field_I_02, Device Dispenser
+RBox_Field_J, Device Dispenser
+RBox_Field_J_02, Device Dispenser
+RBox_Field_K, Device Dispenser
+RBox_Field_K_02, Device Dispenser
+RBox_Field_K_03, Device Dispenser
+RBox_Field_L, Device Dispenser
+RBox_Field_L_02, Device Dispenser
+RBox_Field_M, Device Dispenser
+RBox_Field_M_02, Device Dispenser
+RBox_Field_N, Device Dispenser
+RBox_Field_Q, Device Dispenser
+RBox_Field_R, Device Dispenser
+RBox_Field_R_02, Device Dispenser
+RBox_Field_S, Device Dispenser
+RBox_Field_T, Device Dispenser
 RPICA_Manager_SouthernVillage004Shop, 
 RPICA_Manager_SouthernVillageGamblerShopGift, 
 RPICA_Manager_SouthernVillageGamblerShopTBox, 
@@ -7458,71 +7458,71 @@ SoundLocator_Ganondorf_BattleArea,
 SoundLocator_SkyBell, 
 SoundLocator_ZonauBoss_BattleArea, 
 SoundLocator_ZoraAreaTar, 
-SpObj_BalloonEnvelope_A_01, 
-SpObj_BalloonEnvelope_A_01_Static, 
-SpObj_BalloonEnvelope_A_04, 
-SpObj_BalloonEnvelope_A_05, 
-SpObj_BalloonEnvelope_A_06, 
-SpObj_Beamos_A_01, 
-SpObj_Beamos_Capsule_A_01_Bundle_A, 
-SpObj_Cannon_A_01, 
-SpObj_Cannon_Capsule_A_01_Bundle_A, 
-SpObj_Cart_A_01, 
-SpObj_Cart_Capsule_A_01_Bundle_A, 
-SpObj_Cart_Capsule_A_01_Bundle_B, 
-SpObj_Chaser_A_01, 
-SpObj_ControlStick_A_01, 
-SpObj_ControlStick_A_02, 
-SpObj_ControlStick_A_03, 
-SpObj_ControlStick_Capsule_A_01_Bundle_A, 
-SpObj_ControlStick_Capsule_A_01_Bundle_B, 
-SpObj_CookSet_Capsule_A_01_Bundle_A, 
-SpObj_CookSet_Capsule_A_01_Bundle_B, 
-SpObj_ElectricBoxGenerator, 
-SpObj_ElectricBoxGenerator_Capsule_A_01_Bundle_A, 
-SpObj_EnergyBank_A_01, 
-SpObj_EnergyBank_A_02, 
-SpObj_EnergyBank_Capsule_A_01_Bundle_A, 
-SpObj_FastWheel_A_01, 
-SpObj_FastWheel_Merged_A_01, 
-SpObj_FastWheel_Merged_A_02, 
-SpObj_FastWheel_Merged_A_03, 
-SpObj_FlameThrower_A_01, 
-SpObj_FlameThrower_Capsule_A_01_Bundle_A, 
-SpObj_FlashLight_A_01, 
-SpObj_FlashLight_Capsule_A_01_Bundle_A, 
-SpObj_FloatingStone_A_01, 
-SpObj_FloatingStone_Capsule_A_01_Bundle_A, 
-SpObj_FloatingStone_Capsule_A_01_Bundle_B, 
-SpObj_GolemHead_A_01, 
-SpObj_LiftGeneratorWing_A_01, 
-SpObj_LiftGeneratorWing_A_01_MiniGame, 
-SpObj_LiftGeneratorWing_Capsule_A_01_Bundle_A, 
-SpObj_LiftableWaterPump_Capsule_A_01_Bundle_A, 
-SpObj_LightMirror_A_01, 
-SpObj_LightMirror_Capsule_A_01_Bundle_A, 
-SpObj_Pile_A_01, 
-SpObj_Pile_Capsule_A_01_Bundle_A, 
-SpObj_Rocket_A_01, 
-SpObj_Rocket_Capsule_A_01_Bundle_A, 
-SpObj_Rocket_Capsule_A_01_Bundle_B, 
-SpObj_SlipBoard_A_01, 
-SpObj_SlipBoard_Capsule_A_01_Bundle_A, 
-SpObj_SnowMachine_A_01, 
-SpObj_SnowMachine_Capsule_A_01_Bundle_A, 
-SpObj_SpringPiston_A_01, 
-SpObj_SpringPiston_Capsule_A_01_Bundle_A, 
-SpObj_SpringPiston_Capsule_A_01_Bundle_B, 
+SpObj_BalloonEnvelope_A_01, Balloon
+SpObj_BalloonEnvelope_A_01_Static, Balloon
+SpObj_BalloonEnvelope_A_04, Balloon
+SpObj_BalloonEnvelope_A_05, Balloon
+SpObj_BalloonEnvelope_A_06, Balloon
+SpObj_Beamos_A_01, Beam Emitter
+SpObj_Beamos_Capsule_A_01_Bundle_A, Beam Emitter Capsule
+SpObj_Cannon_A_01, Cannon
+SpObj_Cannon_Capsule_A_01_Bundle_A, Cannon x3
+SpObj_Cart_A_01, Cart
+SpObj_Cart_Capsule_A_01_Bundle_A, Cart x3
+SpObj_Cart_Capsule_A_01_Bundle_B, Cart x5
+SpObj_Chaser_A_01, Homing Cart
+SpObj_ControlStick_A_01, Steering Stick
+SpObj_ControlStick_A_02, Steering Stick
+SpObj_ControlStick_A_03, Steering Stick
+SpObj_ControlStick_Capsule_A_01_Bundle_A, Steering Stick x3
+SpObj_ControlStick_Capsule_A_01_Bundle_B, Steering Stick x5
+SpObj_CookSet_Capsule_A_01_Bundle_A, Portable Pot x3
+SpObj_CookSet_Capsule_A_01_Bundle_B, Portable Pot x5
+SpObj_ElectricBoxGenerator, Shock Emitter
+SpObj_ElectricBoxGenerator_Capsule_A_01_Bundle_A, Shock Emitter x3
+SpObj_EnergyBank_A_01, Battery
+SpObj_EnergyBank_A_02, Big Battery
+SpObj_EnergyBank_Capsule_A_01_Bundle_A, Battery x3
+SpObj_FastWheel_A_01, Small Wheel
+SpObj_FastWheel_Merged_A_01, Small Wheel
+SpObj_FastWheel_Merged_A_02, Small Wheel
+SpObj_FastWheel_Merged_A_03, Small Wheel
+SpObj_FlameThrower_A_01, Flame Emitter
+SpObj_FlameThrower_Capsule_A_01_Bundle_A, Flame Emitter x3
+SpObj_FlashLight_A_01, Light
+SpObj_FlashLight_Capsule_A_01_Bundle_A, Light x3
+SpObj_FloatingStone_A_01, Hover Stone
+SpObj_FloatingStone_Capsule_A_01_Bundle_A, Hover Stone x3
+SpObj_FloatingStone_Capsule_A_01_Bundle_B, Hover Stone x5
+SpObj_GolemHead_A_01, Construct Head
+SpObj_LiftGeneratorWing_A_01, Wing
+SpObj_LiftGeneratorWing_A_01_MiniGame, Wing
+SpObj_LiftGeneratorWing_Capsule_A_01_Bundle_A, Wing x3
+SpObj_LiftableWaterPump_Capsule_A_01_Bundle_A, Hydrant x3
+SpObj_LightMirror_A_01, Mirror
+SpObj_LightMirror_Capsule_A_01_Bundle_A, Mirror x3
+SpObj_Pile_A_01, Stake
+SpObj_Pile_Capsule_A_01_Bundle_A, Stake x3
+SpObj_Rocket_A_01, Rocket
+SpObj_Rocket_Capsule_A_01_Bundle_A, Rocket x3
+SpObj_Rocket_Capsule_A_01_Bundle_B, Rocket x5
+SpObj_SlipBoard_A_01, Sled
+SpObj_SlipBoard_Capsule_A_01_Bundle_A, Sled x3
+SpObj_SnowMachine_A_01, Frost Emitter
+SpObj_SnowMachine_Capsule_A_01_Bundle_A, Frost Emitter x3
+SpObj_SpringPiston_A_01, Spring
+SpObj_SpringPiston_Capsule_A_01_Bundle_A, Spring x3
+SpObj_SpringPiston_Capsule_A_01_Bundle_B, Spring x5
 SpObj_SwitchWheel_B_01, 
-SpObj_TiltingDoll_A_01, 
-SpObj_TiltingDoll_Capsule_A_01_Bundle_A, 
-SpObj_TimerBomb_A_01, 
-SpObj_TimerBomb_Capsule_A_01_Bundle_A, 
-SpObj_TimerBomb_Capsule_A_01_Bundle_B, 
-SpObj_WaterPump_A_01, 
-SpObj_WindGenerator_A_01, 
-SpObj_WindGenerator_A_03, 
-SpObj_WindGenerator_Capsule_A_01_Bundle_A, 
+SpObj_TiltingDoll_A_01, Stabilizer
+SpObj_TiltingDoll_Capsule_A_01_Bundle_A, Stabilizer x3
+SpObj_TimerBomb_A_01, Time Bomb
+SpObj_TimerBomb_Capsule_A_01_Bundle_A, Time Bomb x3
+SpObj_TimerBomb_Capsule_A_01_Bundle_B, Time Bomb x5
+SpObj_WaterPump_A_01, Hydrant
+SpObj_WindGenerator_A_01, Fan
+SpObj_WindGenerator_A_03, Fan
+SpObj_WindGenerator_Capsule_A_01_Bundle_A, Fan x3
 SpotBgmCaveFilterProhibitArea, 
 SpotBgmSuppressArea, 
 SpotBgmSuppressAreaBaseCamp, 
