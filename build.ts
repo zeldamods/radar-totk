@@ -15,6 +15,8 @@ const totkData = argv.d
 const db = sqlite3('map.db.tmp');
 db.pragma('journal_mode = WAL');
 
+
+// hash_id is TEXT because the values is too big for sqlite to hold as an integer
 db.exec(`
   CREATE TABLE objs (
    objid INTEGER PRIMARY KEY,
@@ -28,7 +30,9 @@ db.exec(`
    map_static bool,
    merged bool,
    drops TEXT,
-   equip TEXT
+   equip TEXT,
+   ui_drops TEXT,
+   ui_equip TEXT
   );
 `);
 
@@ -38,9 +42,9 @@ let gen_group_id = 1;
 const NAMES = JSON.parse(fs.readFileSync('names.json', 'utf8'))
 
 const insertObj = db.prepare(`INSERT INTO objs
-  (map_type, map_name, gen_group, hash_id, unit_config_name, ui_name, data, map_static, drops, equip, merged)
+  (map_type, map_name, gen_group, hash_id, unit_config_name, ui_name, data, map_static, drops, equip, merged, ui_drops, ui_equip)
   VALUES
-  (@map_type, @map_name, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @map_static, @drops, @equip, @merged )`);
+  (@map_type, @map_name, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @map_static, @drops, @equip, @merged, @ui_drops, @ui_equip )`);
 
 function getName(name: string) {
   if (name in NAMES) {
@@ -81,16 +85,18 @@ const EQUIPS = [
 ];
 
 function getMapName(filePath: string) {
-  if (filePath.includes('MainField/')) {
-    return 'Surface';
-  } else if (filePath.includes('MinusField/')) {
-    return 'Depths';
-  } else if (filePath.includes('Sky/')) {
+  // Almost everything, except MinusField must come before MainField
+  //   as they are included in the MainField directory
+  if (filePath.includes('Sky/')) {
     return 'Sky';
   } else if (filePath.includes('DeepHole/')) {
     return 'DeepHole';
   } else if (filePath.includes('Cave/')) {
     return 'Cave';
+  } else if (filePath.includes('MinusField/')) {
+    return 'Depths';
+  } else if (filePath.includes('MainField/')) {
+    return 'Surface';
   }
   console.log("Unknown Map Name:", filePath)
   process.exit(1)
@@ -116,6 +122,8 @@ function processBanc(filePath: string) {
   for (const actor of doc.Actors) {
     let drops: any = [];
     let equip: any = [];
+    let ui_drops: any = [];
+    let ui_equip: any = [];
     if (actor.Dynamic) {
       const dyn = actor.Dynamic;
       dyn.Translate = actor.Translate;
@@ -126,10 +134,18 @@ function processBanc(filePath: string) {
       if (dyn.Drop__DropActor) {
         drops.push(1);
         drops.push(dyn.Drop__DropActor);
+        let ui_drop_actor = getName(dyn.Drop__DropActor);
+        if (ui_drop_actor != dyn.Drop__DropActor) {
+          ui_drops.push(ui_drop_actor);
+        }
       }
       for (const tag of EQUIPS) {
-        if (dyn[tag]) {
+        if (dyn[tag] && dyn[tag] != '2' && dyn[tag] != '3') {
           equip.push(dyn[tag]);
+          let ui_equip_actor = getName(dyn[tag]);
+          if (ui_equip_actor != dyn[tag]) {
+            ui_equip.push(ui_equip_actor);
+          }
         }
       }
       for (const key of Object.keys(dyn)) {
@@ -155,6 +171,8 @@ function processBanc(filePath: string) {
         equip: (equip.length > 0) ? JSON.stringify(equip) : null,
         map_static: (isStatic) ? 1 : 0,
         merged: (isMerged) ? 1 : 0,
+        ui_drops: JSON.stringify(ui_drops),
+        ui_equip: JSON.stringify(ui_equip),
       });
     } catch (e) {
       console.log("sqlite3 insert error", actor.Hash);
@@ -232,10 +250,10 @@ createIndexes();
 
 function createFts() {
   db.exec(`
-    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", tokenize="unicode61", map, actor, name, data);
+    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", tokenize="unicode61", map, actor, name, data, drops, ui_drops, equip, ui_equip);
 
-    INSERT INTO objs_fts(rowid, map, actor, name, data)
-    SELECT objid, map_type || '/' || map_name, unit_config_name, ui_name, data  FROM objs;
+    INSERT INTO objs_fts(rowid, map, actor, name, data, drops, ui_drops, equip, ui_equip )
+    SELECT objid, map_type || '/' || map_name, unit_config_name, ui_name, data, drops, ui_drops, equip, ui_equip FROM objs;
   `);
 }
 console.log('creating FTS tables...');
