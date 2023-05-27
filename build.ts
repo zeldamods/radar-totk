@@ -120,10 +120,7 @@ function getMapName(filePath: string) {
   } else {
     quad = 'Z-0';
   }
-  if (level == "Cave" || level == "DeepHole") {
-    return `${level}/${quad}`;
-  }
-  return `${level}/${quad}`;
+  return `${level}_${quad}`;
 }
 
 function processBanc(filePath: string) {
@@ -182,10 +179,10 @@ function processBanc(filePath: string) {
     }
     let zmap_name = map_name;
     if (zmap_name.includes('Z-0')) {
-      const level = zmap_name.split('/')[0];
+      const level = zmap_name.split('_')[0];
       if (actor.Translate) {
         const quad = pointToMapUnit(actor.Translate);
-        zmap_name = `${level}/${quad}`
+        zmap_name = `${level}_${quad}`
       } else {
         console.log(actor);
         zmap_name = `${level}`
