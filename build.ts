@@ -84,27 +84,50 @@ const EQUIPS = [
   "EquipmentUser_Accessory3",
 ];
 
+export function pointToMapUnit(p: number[]) {
+  const col = ((p[0] + 5000) / 1000) >>> 0;
+  const row = ((p[2] + 4000) / 1000) >>> 0;
+  return String.fromCharCode('A'.charCodeAt(0) + col)
+    + '-'
+    + String.fromCharCode('1'.charCodeAt(0) + row);
+}
+
+
 function getMapName(filePath: string) {
   // Almost everything, except MinusField must come before MainField
   //   as they are included in the MainField directory
+  let level = "";
   if (filePath.includes('Sky/')) {
-    return 'Sky';
+    level = 'Sky';
   } else if (filePath.includes('DeepHole/')) {
-    return 'DeepHole';
+    level = 'DeepHole';
   } else if (filePath.includes('Cave/')) {
-    return 'Cave';
+    level = 'Cave';
   } else if (filePath.includes('MinusField/')) {
-    return 'Depths';
+    level = 'Depths';
   } else if (filePath.includes('MainField/')) {
-    return 'Surface';
+    level = 'Surface';
+  } else {
+    console.log("Unknown Map Name:", filePath)
+    process.exit(1)
   }
-  console.log("Unknown Map Name:", filePath)
-  process.exit(1)
+  //const quad = path.basename(filePath).split('.')[0].split('_').slice(-2, -1);
+  let quad = "";
+  const base = path.basename(filePath);
+  const idx = base.indexOf('-');
+  if (idx > 0) {
+    quad = base.slice(idx - 1, idx + 2);
+  } else {
+    quad = 'Z-0';
+  }
+  if (level == "Cave" || level == "DeepHole") {
+    return `${level}/${quad}`;
+  }
+  return `${level}/${quad}`;
 }
 
 function processBanc(filePath: string) {
   let doc: any = null;
-  console.log("process Banc", filePath);
   try {
     doc = yaml.load(fs.readFileSync(filePath, 'utf-8'),
       { schema: schema }
@@ -118,6 +141,7 @@ function processBanc(filePath: string) {
   if (!doc.Actors) {
     return;
   }
+  console.log("process Banc", map_name, (isStatic) ? "Static" : "Dynamic", filePath);
 
   for (const actor of doc.Actors) {
     let drops: any = [];
@@ -156,12 +180,23 @@ function processBanc(filePath: string) {
     } else {
       actor.Dynamic = { Translate: actor.Translate };
     }
+    let zmap_name = map_name;
+    if (zmap_name.includes('Z-0')) {
+      const level = zmap_name.split('/')[0];
+      if (actor.Translate) {
+        const quad = pointToMapUnit(actor.Translate);
+        zmap_name = `${level}/${quad}`
+      } else {
+        console.log(actor);
+        zmap_name = `${level}`
+      }
+    }
     let ui_name = getName(actor.Gyaml);
     const isMerged = actor.Gyaml.includes('MergedActor');
     try {
       insertObj.run({
         map_type: 'Totk',
-        map_name: map_name,
+        map_name: zmap_name,
         gen_group: null,
         hash_id: actor.Hash.toString(),
         unit_config_name: actor.Gyaml,
