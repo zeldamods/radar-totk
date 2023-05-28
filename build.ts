@@ -146,7 +146,6 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
     let ui_equip: any = [];
     if (actor.Dynamic) {
       const dyn = actor.Dynamic;
-      dyn.Translate = actor.Translate;
       if (dyn.Drop__DropTable) {
         drops.push(2);
         drops.push(dyn.Drop__DropTable);
