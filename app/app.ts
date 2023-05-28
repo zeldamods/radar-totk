@@ -1,9 +1,10 @@
+import sqlite3 from 'better-sqlite3';
 // @ts-ignore
 import cors from 'cors';
 import express from 'express';
 import path from 'path';
 import responseTime from 'response-time';
-import sqlite3 from 'better-sqlite3';
+
 import * as util from './util';
 
 const db = sqlite3(path.join(util.APP_ROOT, 'map.db'), {
@@ -158,4 +159,4 @@ app.get('/objids/:map_type/:map_name', handleReqObjids);
 
 
 
-app.listen(3007);
+app.listen(3008);
