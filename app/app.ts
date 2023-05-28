@@ -36,7 +36,8 @@ function parseResult(result: any): { [key: string]: any } {
   result.drops = undefined;
 
   result.equip = JSON.parse(result.equip);
-  result.pos = result.data.Translate.map((v: number) => Math.round(v * 100) / 100);
+  if (result.data.Translate)
+    result.pos = result.data.Translate.map((v: number) => Math.round(v * 100) / 100);
   result.Location = (result.data && result.data.Location) ? result.data.Location : undefined;
   return result;
 }
