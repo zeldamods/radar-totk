@@ -38,6 +38,8 @@ function parseResult(result: any): { [key: string]: any } {
   result.equip = JSON.parse(result.equip);
   if (result.data.Translate)
     result.pos = result.data.Translate.map((v: number) => Math.round(v * 100) / 100);
+  else
+    result.pos = [0, 0, 0];
   result.Location = (result.data && result.data.Location) ? result.data.Location : undefined;
   return result;
 }
