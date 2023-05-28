@@ -93,7 +93,7 @@ export function pointToMapUnit(p: number[]) {
 }
 
 
-function getMapName(filePath: string) {
+function getMapNameForOpenWorldStage(filePath: string) {
   // Almost everything, except MinusField must come before MainField
   //   as they are included in the MainField directory
   let level = "";
@@ -123,7 +123,7 @@ function getMapName(filePath: string) {
   return `${level}_${quad}`;
 }
 
-function processBanc(filePath: string) {
+function processBanc(filePath: string, mapType: string, mapName: string) {
   let doc: any = null;
   try {
     doc = yaml.load(fs.readFileSync(filePath, 'utf-8'),
@@ -134,11 +134,10 @@ function processBanc(filePath: string) {
     process.exit(1);
   }
   const isStatic = filePath.includes('_Static');
-  let map_name = getMapName(filePath)
   if (!doc.Actors) {
     return;
   }
-  console.log("process Banc", map_name, (isStatic) ? "Static" : "Dynamic", filePath);
+  console.log("process Banc", mapName, (isStatic) ? "Static" : "Dynamic", filePath);
 
   for (const actor of doc.Actors) {
     let drops: any = [];
@@ -175,23 +174,24 @@ function processBanc(filePath: string) {
         }
       }
     }
-    let zmap_name = map_name;
-    if (zmap_name.includes('Z-0')) {
-      const level = zmap_name.split('_')[0];
+
+    if (mapType === "Totk" && mapName.includes('Z-0')) {
+      const level = mapName.split('_')[0];
       if (actor.Translate) {
         const quad = pointToMapUnit(actor.Translate);
-        zmap_name = `${level}_${quad}`
+        mapName = `${level}_${quad}`
       } else {
         console.log(actor);
-        zmap_name = `${level}`
+        mapName = `${level}`
       }
     }
+
     let ui_name = getName(actor.Gyaml);
     const isMerged = actor.Gyaml.includes('MergedActor');
     try {
       insertObj.run({
-        map_type: 'Totk',
-        map_name: zmap_name,
+        map_type: mapType,
+        map_name: mapName,
         gen_group: null,
         hash_id: actor.Hash.toString(),
         unit_config_name: actor.Gyaml,
@@ -249,7 +249,9 @@ function processBancs() {
       if (!file.endsWith('.bcett.yml'))
         continue;
       let filePath = path.join(dirPath, file);
-      processBanc(filePath);
+
+      const mapName = getMapNameForOpenWorldStage(filePath);
+      processBanc(filePath, "Totk", mapName);
     }
   }
 }
