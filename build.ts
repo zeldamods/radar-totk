@@ -55,13 +55,13 @@ function getName(name: string) {
 
 const ulType = new yaml.Type('!ul', {
   kind: 'scalar', instanceOf: Number,
-  resolve: function(data: any) { return true; },
-  construct: function(data: any) { return data; },
+  resolve: function (data: any) { return true; },
+  construct: function (data: any) { return data; },
 });
 const uType = new yaml.Type('!u', {
   kind: 'scalar', instanceOf: Number,
-  resolve: function(data: any) { return true; },
-  construct: function(data: any) { return data; },
+  resolve: function (data: any) { return true; },
+  construct: function (data: any) { return data; },
 });
 
 let schema = yaml.DEFAULT_SCHEMA.extend([ulType, uType]);
@@ -252,6 +252,21 @@ function processBancs() {
 
       const mapName = getMapNameForOpenWorldStage(filePath);
       processBanc(filePath, "Totk", mapName);
+    }
+  }
+
+  for (const mapType of ["SmallDungeon", "LargeDungeon", "NormalStage"]) {
+    const dirPath = path.join(totkData, mapType);
+    for (const file of fs.readdirSync(dirPath)) {
+      if (!file.endsWith('.bcett.yml'))
+        continue;
+
+      const filePath = path.join(dirPath, file);
+      const mapName = file
+        .replace(".bcett.yml", "")
+        .replace("_Static", "")
+        .replace("_Dynamic", "");
+      processBanc(filePath, mapType, mapName);
     }
   }
 }
