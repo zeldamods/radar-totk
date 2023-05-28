@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "tsc": "tsc",
-    "prod": "node ./app/app.js",
+    "prod": "node --enable-source-maps ./app/app.js",
     "dev": "ts-node-dev --respawn --transpile-only ./app/app.ts"
   },
   "author": "leoetlino <leo@leolam.fr>",
