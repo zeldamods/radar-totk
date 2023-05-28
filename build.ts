@@ -1,7 +1,7 @@
-import fs from 'fs';
 import sqlite3 from 'better-sqlite3';
-import path from 'path';
+import fs from 'fs';
 import yaml from 'js-yaml';
+import path from 'path';
 
 let parseArgs = require('minimist');
 let argv = parseArgs(process.argv);
@@ -174,8 +174,6 @@ function processBanc(filePath: string) {
           console.log('Equip', key)
         }
       }
-    } else {
-      actor.Dynamic = { Translate: actor.Translate };
     }
     let zmap_name = map_name;
     if (zmap_name.includes('Z-0')) {
@@ -198,7 +196,7 @@ function processBanc(filePath: string) {
         hash_id: actor.Hash.toString(),
         unit_config_name: actor.Gyaml,
         ui_name: ui_name,
-        data: JSON.stringify(actor.Dynamic),
+        data: JSON.stringify(actor),
         drops: (drops.length > 0) ? JSON.stringify(drops) : null,
         equip: (equip.length > 0) ? JSON.stringify(equip) : null,
         map_static: (isStatic) ? 1 : 0,
