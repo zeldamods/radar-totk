@@ -74,6 +74,18 @@ app.get('/obj/:map_type/:map_name/:hash_id', (req, res) => {
   res.json(result);
 });
 
+// Returns object details for an object.
+app.get('/obj_by_hash/:hash_id', (req, res) => {
+  const stmt = db.prepare(`SELECT ${FIELDS} FROM objs
+    WHERE hash_id = @hash_id LIMIT 1`);
+  const result = parseResult(stmt.get({
+    hash_id: req.params.hash_id,
+  }));
+  if (!result.map_type)
+    return res.status(404).json({});
+  res.json(result);
+});
+
 // Returns the placement generation group for an object.
 app.get('/obj/:map_type/:map_name/:hash_id/gen_group', (req, res) => {
   const result = db.prepare(`SELECT ${FIELDS} FROM objs
