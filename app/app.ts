@@ -38,11 +38,12 @@ function parseResult(result: any): { [key: string]: any } {
 
   result.equip = JSON.parse(result.equip);
   result.ui_equip = JSON.parse(result.ui_equip);
+  result.Location = result.data?.Dynamic?.Location;
+  result.ui_location = result.data?.Dynamic?.ui_location;
   if (result.data.Translate)
     result.pos = result.data.Translate.map((v: number) => Math.round(v * 100) / 100);
   else
     result.pos = [0, 0, 0];
-  result.Location = (result.data && result.data.Location) ? result.data.Location : undefined;
   return result;
 }
 

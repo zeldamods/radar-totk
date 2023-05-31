@@ -40,6 +40,7 @@ let GG: any = {}; // [hash] = gen_group
 let gen_group_id = 1;
 
 const NAMES = JSON.parse(fs.readFileSync('names.json', 'utf8'))
+const LOCATIONS = JSON.parse(fs.readFileSync('LocationMarker.json', 'utf8'))
 
 const insertObj = db.prepare(`INSERT INTO objs
   (map_type, map_name, gen_group, hash_id, unit_config_name, ui_name, data, map_static, drops, equip, merged, ui_drops, ui_equip)
@@ -171,6 +172,9 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
         if (!EQUIPS.includes(key) && key.startsWith('Equip')) {
           console.log('Equip', key)
         }
+      }
+      if (dyn.Location && dyn.Location in LOCATIONS) {
+        dyn.ui_location = LOCATIONS[dyn.Location];
       }
     }
 
