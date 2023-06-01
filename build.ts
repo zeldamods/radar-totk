@@ -127,7 +127,7 @@ function getMapNameForOpenWorldStage(filePath: string) {
 }
 
 function parseHash(hash: string) {
-  return '0x' + BigInt(hash).toString(16);
+  return '0x' + BigInt(hash).toString(16).padStart(16, '0');
 }
 
 function processBanc(filePath: string, mapType: string, mapName: string) {
