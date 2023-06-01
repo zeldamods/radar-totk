@@ -104,6 +104,8 @@ function getMapNameForOpenWorldStage(filePath: string) {
     level = 'DeepHole';
   } else if (filePath.includes('Cave/')) {
     level = 'Cave';
+  } else if (filePath.includes('Castle/')) {
+    level = 'Castle';
   } else if (filePath.includes('MinusField/')) {
     level = 'Depths';
   } else if (filePath.includes('MainField/')) {
@@ -122,6 +124,10 @@ function getMapNameForOpenWorldStage(filePath: string) {
     quad = 'Z-0';
   }
   return `${level}_${quad}`;
+}
+
+function parseHash(hash: string) {
+  return '0x' + BigInt(hash).toString(16);
 }
 
 function processBanc(filePath: string, mapType: string, mapName: string) {
@@ -145,6 +151,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
     let equip: any = [];
     let ui_drops: any = [];
     let ui_equip: any = [];
+    actor.Hash = parseHash(actor.Hash);
     if (actor.Dynamic) {
       const dyn = actor.Dynamic;
       if (dyn.Drop__DropTable) {
@@ -188,7 +195,15 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
         mapName = `${level}`
       }
     }
-
+    if (actor.Phive?.Placement?.ID) {
+      actor.Phive.Placement.ID = parseHash(actor.Phive.Placement.ID);
+    }
+    if (actor.Links) {
+      for (const link of actor.Links) {
+        link.Dst = parseHash(link.Dst);
+        link.Src = parseHash(link.Src);
+      }
+    }
     let ui_name = getName(actor.Gyaml);
     const isMerged = actor.Gyaml.includes('MergedActor');
     try {
@@ -244,7 +259,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
 
 
 function processBancs() {
-  const fields = ["MainField", "MinusField", "MainField/Sky", "MainField/Cave", "MainField/DeepHole"];
+  const fields = ["MainField", "MinusField", "MainField/Sky", "MainField/Cave", "MainField/DeepHole", "MainField/Castle"];
   for (const field of fields) {
     const dirPath = path.join(totkData, field);
     let files = fs.readdirSync(dirPath);
@@ -320,7 +335,7 @@ function processRecycleBox() {
         }
         if (equip.length > 0) {
           stmt.run({
-            hash_id: hash_id,
+            hash_id: parseHash(hash_id),
             equip: JSON.stringify(equip),
             ui_equip: JSON.stringify(ui_equip),
           });
