@@ -51,7 +51,7 @@ db.exec(`
    map_type TEXT NOT NULL,
    map_name TEXT NOT NULL,
    hash_id TEXT UNIQUE,
-   data JSON NOT NULL
+   data TEXT NOT NULL
   );
 
   CREATE TABLE ai_group_references (
