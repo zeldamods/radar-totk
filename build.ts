@@ -12,6 +12,7 @@ if (!argv.d) {
 }
 const totkData = argv.d
 
+fs.rmSync('map.db.tmp', { force: true });
 const db = sqlite3('map.db.tmp');
 db.pragma('journal_mode = WAL');
 
@@ -44,6 +45,22 @@ db.exec(`
    ui_drops TEXT,
    ui_equip TEXT
   );
+
+  CREATE TABLE ai_groups (
+   id INTEGER PRIMARY KEY,
+   map_type TEXT NOT NULL,
+   map_name TEXT NOT NULL,
+   hash_id TEXT UNIQUE,
+   data JSON NOT NULL
+  );
+
+  CREATE TABLE ai_group_references (
+    id INTEGER PRIMARY KEY,
+    ai_group_id INTEGER,
+    object_id INTEGER,
+    FOREIGN KEY(ai_group_id) REFERENCES ai_groups(id),
+    FOREIGN KEY(object_id) REFERENCES objs(objid)
+  );
 `);
 
 const NAMES = JSON.parse(fs.readFileSync('names.json', 'utf8'))
@@ -53,6 +70,17 @@ const insertObj = db.prepare(`INSERT INTO objs
   (map_type, map_name, gen_group, hash_id, unit_config_name, ui_name, data, scale, map_static, drops, equip, merged, ui_drops, ui_equip)
   VALUES
   (@map_type, @map_name, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @scale, @map_static, @drops, @equip, @merged, @ui_drops, @ui_equip )`);
+
+const insertAiGroup = db.prepare(`INSERT INTO ai_groups
+  (map_type, map_name, hash_id, data)
+  VALUES
+  (@map_type, @map_name, @hash_id, @data)`);
+
+const insertAiGroupReference = db.prepare(`INSERT INTO ai_group_references
+  (ai_group_id, object_id)
+  VALUES
+  (@ai_group_id, @object_id)
+`);
 
 function getName(name: string) {
   if (name in NAMES) {
@@ -170,6 +198,30 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
     }
   }
 
+  const aiGroupsByEntityId: Map<String, any[]> = new Map();
+  for (const group of (doc.AiGroups || [])) {
+    const result = insertAiGroup.run({
+      map_type: mapType,
+      map_name: mapName,
+      hash_id: parseHash(group.Hash),
+      data: JSON.stringify(group),
+    });
+
+    const aiGroupId = result.lastInsertRowid;
+
+    for (const reference of group.References) {
+      if (reference.Reference === undefined) {
+        continue;
+      }
+
+      const entityId = parseHash(reference.Reference);
+      if (aiGroupsByEntityId.get(entityId) === undefined) {
+        aiGroupsByEntityId.set(entityId, []);
+      }
+      aiGroupsByEntityId.get(entityId)!.push(aiGroupId);
+    }
+  }
+
   for (const actor of doc.Actors) {
     let drops: any = [];
     let equip: any = [];
@@ -237,7 +289,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
     }
 
     try {
-      insertObj.run({
+      const result = insertObj.run({
         map_type: mapType,
         map_name: mapName,
         gen_group: genGroup,
@@ -253,6 +305,15 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
         ui_drops: JSON.stringify(ui_drops),
         ui_equip: JSON.stringify(ui_equip),
       });
+
+      const objid = result.lastInsertRowid;
+
+      for (const aiGroupId of (aiGroupsByEntityId.get(actor.Hash) || [])) {
+        insertAiGroupReference.run({
+          ai_group_id: aiGroupId,
+          object_id: objid,
+        });
+      }
     } catch (e) {
       console.log("sqlite3 insert error", actor.Hash);
       console.log(e);
@@ -351,6 +412,7 @@ function createIndexes() {
     CREATE INDEX objs_map_type ON objs (map_type);
     CREATE INDEX objs_hash_id ON objs (hash_id);
     CREATE INDEX objs_unit_config_name ON objs (unit_config_name);
+    CREATE INDEX ai_group_references__object_id ON ai_group_references (object_id);
   `);
 }
 console.log('creating indexes...');

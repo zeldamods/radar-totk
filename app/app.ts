@@ -107,6 +107,27 @@ app.get('/obj/:map_type/:map_name/:hash_id/gen_group', (req, res) => {
   res.json(result);
 });
 
+// Returns the AI groups for an object.
+app.get('/obj/:map_type/:map_name/:hash_id/ai_groups', (req, res) => {
+  const result = db.prepare(`SELECT hash_id, data
+    FROM ai_groups
+    INNER JOIN ai_group_references
+      ON ai_groups.id = ai_group_references.ai_group_id
+    WHERE ai_group_references.object_id =
+       (SELECT objid FROM objs
+          WHERE map_type = @map_type
+            AND map_name = @map_name
+            AND hash_id = @hash_id LIMIT 1)`)
+    .all({
+      map_type: req.params.map_type,
+      map_name: req.params.map_name,
+      hash_id: req.params.hash_id,
+    });
+  if (!result.length)
+    return res.status(404).json([]);
+  res.json(result);
+});
+
 // Returns minimal object data for all matching objects.
 function handleReqObjs(req: express.Request, res: express.Response) {
   const mapType: string | undefined = req.params.map_type;
