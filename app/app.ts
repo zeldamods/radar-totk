@@ -123,6 +123,11 @@ app.get('/obj/:map_type/:map_name/:hash_id/ai_groups', (req, res) => {
       map_name: req.params.map_name,
       hash_id: req.params.hash_id,
     });
+
+  for (const group of result) {
+    group.data = JSON.parse(group.data);
+  }
+
   if (!result.length)
     return res.status(404).json([]);
   res.json(result);
