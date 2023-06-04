@@ -102,8 +102,6 @@ app.get('/obj/:map_type/:map_name/:hash_id/gen_group', (req, res) => {
       map_name: req.params.map_name,
       hash_id: req.params.hash_id,
     }).map(parseResult);
-  if (!result.length)
-    return res.status(404).json([]);
   res.json(result);
 });
 
@@ -144,8 +142,6 @@ app.get('/obj/:map_type/:map_name/:hash_id/ai_groups', (req, res) => {
       }
   }
 
-  if (!result.length)
-    return res.status(404).json([]);
   res.json(result);
 });
 
