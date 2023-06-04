@@ -413,6 +413,7 @@ function createIndexes() {
     CREATE INDEX objs_hash_id ON objs (hash_id);
     CREATE INDEX objs_unit_config_name ON objs (unit_config_name);
     CREATE INDEX ai_group_references__object_id ON ai_group_references (object_id);
+    CREATE INDEX ai_group_references__ai_group_id ON ai_group_references (ai_group_id);
   `);
 }
 console.log('creating indexes...');
