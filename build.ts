@@ -223,6 +223,8 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
   }
 
   for (const actor of doc.Actors) {
+    let ui_name = getName(actor.Gyaml);
+
     let drops: any = [];
     let equip: any = [];
     let ui_drops: any = [];
@@ -257,7 +259,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
         }
       }
       if (dyn.Location && dyn.Location in LOCATIONS) {
-        dyn.ui_location = LOCATIONS[dyn.Location];
+        ui_name += ' ' + LOCATIONS[dyn.Location];
       }
     }
 
@@ -280,7 +282,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
         link.Src = parseHash(link.Src);
       }
     }
-    let ui_name = getName(actor.Gyaml);
+
     const isMerged = actor.Gyaml.includes('MergedActor');
 
     let genGroup = genGroupByEntityId.get(actor.Hash);
