@@ -245,7 +245,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
         unit_config_name: actor.Gyaml,
         ui_name: ui_name,
         data: JSON.stringify(actor),
-        scale: actor.IsLevelSensorTarget ? 1 : 0,
+        scale: actor.Dynamic?.IsLevelSensorTarget ? 1 : 0,
         drops: (drops.length > 0) ? JSON.stringify(drops) : null,
         equip: (equip.length > 0) ? JSON.stringify(equip) : null,
         map_static: (isStatic) ? 1 : 0,
