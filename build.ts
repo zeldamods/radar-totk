@@ -36,6 +36,7 @@ db.exec(`
    unit_config_name TEXT NOT NULL,
    ui_name TEXT NOT NULL,
    data JSON NOT NULL,
+   scale INTEGER,
    map_static bool,
    merged bool,
    drops TEXT,
@@ -49,9 +50,9 @@ const NAMES = JSON.parse(fs.readFileSync('names.json', 'utf8'))
 const LOCATIONS = JSON.parse(fs.readFileSync('LocationMarker.json', 'utf8'))
 
 const insertObj = db.prepare(`INSERT INTO objs
-  (map_type, map_name, gen_group, hash_id, unit_config_name, ui_name, data, map_static, drops, equip, merged, ui_drops, ui_equip)
+  (map_type, map_name, gen_group, hash_id, unit_config_name, ui_name, data, scale, map_static, drops, equip, merged, ui_drops, ui_equip)
   VALUES
-  (@map_type, @map_name, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @map_static, @drops, @equip, @merged, @ui_drops, @ui_equip )`);
+  (@map_type, @map_name, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @scale, @map_static, @drops, @equip, @merged, @ui_drops, @ui_equip )`);
 
 function getName(name: string) {
   if (name in NAMES) {
@@ -244,6 +245,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
         unit_config_name: actor.Gyaml,
         ui_name: ui_name,
         data: JSON.stringify(actor),
+        scale: actor.IsLevelSensorTarget ? 1 : 0,
         drops: (drops.length > 0) ? JSON.stringify(drops) : null,
         equip: (equip.length > 0) ? JSON.stringify(equip) : null,
         map_static: (isStatic) ? 1 : 0,
