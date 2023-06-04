@@ -359,10 +359,10 @@ createIndexes();
 
 function createFts() {
   db.exec(`
-    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", tokenize="unicode61", map, actor, name, data, drops, ui_drops, equip, ui_equip, hash_id);
+    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", tokenize="unicode61", map, actor, name, data, scale, drops, ui_drops, equip, ui_equip, hash_id);
 
-    INSERT INTO objs_fts(rowid, map, actor, name, data, drops, ui_drops, equip, ui_equip, hash_id )
-    SELECT objid, map_type || '/' || map_name, unit_config_name, ui_name, data, drops, ui_drops, equip, ui_equip, hash_id FROM objs;
+    INSERT INTO objs_fts(rowid, map, actor, name, data, scale, drops, ui_drops, equip, ui_equip, hash_id )
+    SELECT objid, map_type || '/' || map_name, unit_config_name, ui_name, data, scale, drops, ui_drops, equip, ui_equip, hash_id FROM objs;
   `);
 }
 console.log('creating FTS tables...');
