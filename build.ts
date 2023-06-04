@@ -36,8 +36,7 @@ db.exec(`
   );
 `);
 
-let GG: any = {}; // [hash] = gen_group
-let gen_group_id = 1;
+let nextGenGroupId = 0;
 
 const NAMES = JSON.parse(fs.readFileSync('names.json', 'utf8'))
 const LOCATIONS = JSON.parse(fs.readFileSync('LocationMarker.json', 'utf8'))
@@ -146,6 +145,22 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
   }
   console.log("process Banc", mapName, (isStatic) ? "Static" : "Dynamic", filePath);
 
+  const genGroupByEntityId = new Map();
+  if (doc.SimultaneousGroups) {
+    for (const group of doc.SimultaneousGroups) {
+      for (const entityIdStr of group) {
+        const entityId = parseHash(entityIdStr);
+
+        if (genGroupByEntityId.get(entityId) !== undefined) {
+          throw Error("expected each entity to be in exactly one generation group");
+        }
+        genGroupByEntityId.set(entityId, nextGenGroupId);
+
+        ++nextGenGroupId;
+      }
+    }
+  }
+
   for (const actor of doc.Actors) {
     let drops: any = [];
     let equip: any = [];
@@ -206,12 +221,18 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
     }
     let ui_name = getName(actor.Gyaml);
     const isMerged = actor.Gyaml.includes('MergedActor');
+
+    let genGroup = genGroupByEntityId.get(actor.Hash);
+    if (genGroup === undefined) {
+      genGroup = nextGenGroupId++;
+    }
+
     try {
       insertObj.run({
         map_type: mapType,
         map_name: mapName,
-        gen_group: null,
-        hash_id: actor.Hash.toString(),
+        gen_group: genGroup,
+        hash_id: actor.Hash,
         unit_config_name: actor.Gyaml,
         ui_name: ui_name,
         data: JSON.stringify(actor),
@@ -226,33 +247,6 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
       console.log("sqlite3 insert error", actor.Hash);
       console.log(e);
       process.exit(1)
-    }
-
-    if (actor.Links) {
-      for (const link of actor.Links) {
-        if (link.Src != actor.Hash) {
-          console.log("src != hash", link.Src, actor.Hash);
-        }
-        let gg_dst = GG[link.Dst];
-        let gg_src = GG[link.Src];
-        if (!gg_dst && !gg_src) {
-          GG[link.Dst] = gen_group_id;
-          GG[link.Src] = gen_group_id;
-          gen_group_id += 1;
-        } else if (!gg_dst) {
-          GG[link.Dst] = gg_src;
-        } else if (!gg_src) {
-          GG[link.Src] = gg_dst;
-        } else if (gg_dst == gg_src) {
-          true;
-        } else if (gg_dst != gg_src) {
-          for (const id of Object.keys(GG)) {
-            if (GG[id] == gg_src) {
-              GG[id] = gg_dst;
-            }
-          }
-        }
-      }
     }
   }
 }
@@ -287,13 +281,6 @@ function processBancs() {
       processBanc(filePath, mapType, mapName);
     }
   }
-}
-function processBancsGG() {
-  let stmt = db.prepare(`UPDATE objs SET gen_group = @gen_group where hash_id = @hash `);
-  for (const hash of Object.keys(GG)) {
-    stmt.run({ gen_group: GG[hash].toString(), hash: hash })
-  }
-  db.prepare('UPDATE objs SET gen_group = rowid+(select max(gen_group) from objs) where gen_group is null').run();
 }
 
 function processRecycleBox() {
@@ -346,7 +333,6 @@ function processRecycleBox() {
 }
 
 db.transaction(() => processBancs())();
-db.transaction(() => processBancsGG())();
 db.transaction(() => processRecycleBox())();
 
 function createIndexes() {
