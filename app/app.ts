@@ -109,7 +109,7 @@ app.get('/obj/:map_type/:map_name/:hash_id/gen_group', (req, res) => {
 
 // Returns the AI groups for an object.
 app.get('/obj/:map_type/:map_name/:hash_id/ai_groups', (req, res) => {
-  const result = db.prepare(`SELECT id, hash_id, data
+  const result = db.prepare(`SELECT ai_groups.id as id, hash_id, data
     FROM ai_groups
     INNER JOIN ai_group_references
       ON ai_groups.id = ai_group_references.ai_group_id
