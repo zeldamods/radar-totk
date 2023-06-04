@@ -136,7 +136,8 @@ app.get('/obj/:map_type/:map_name/:hash_id/ai_groups', (req, res) => {
     `)
       .all({
         ai_group_id: group.id,
-      });
+      })
+      .map(parseResult);
 
       for (const entity of referencedEntities) {
         group.referenced_entities[entity.hash_id] = entity;
