@@ -15,6 +15,15 @@ const totkData = argv.d
 const db = sqlite3('map.db.tmp');
 db.pragma('journal_mode = WAL');
 
+class GenGroupIdGenerator {
+  private nextId = 0;
+
+  generateId() {
+    return this.nextId++;
+  }
+}
+
+const genGroupIdGenerator = new GenGroupIdGenerator();
 
 // hash_id is TEXT because the values is too big for sqlite to hold as an integer
 db.exec(`
@@ -35,8 +44,6 @@ db.exec(`
    ui_equip TEXT
   );
 `);
-
-let nextGenGroupId = 0;
 
 const NAMES = JSON.parse(fs.readFileSync('names.json', 'utf8'))
 const LOCATIONS = JSON.parse(fs.readFileSync('LocationMarker.json', 'utf8'))
@@ -148,15 +155,16 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
   const genGroupByEntityId = new Map();
   if (doc.SimultaneousGroups) {
     for (const group of doc.SimultaneousGroups) {
+      const groupId = genGroupIdGenerator.generateId();
+
       for (const entityIdStr of group) {
         const entityId = parseHash(entityIdStr);
 
         if (genGroupByEntityId.get(entityId) !== undefined) {
           throw Error("expected each entity to be in exactly one generation group");
         }
-        genGroupByEntityId.set(entityId, nextGenGroupId);
+        genGroupByEntityId.set(entityId, groupId);
 
-        ++nextGenGroupId;
       }
     }
   }
@@ -224,7 +232,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
 
     let genGroup = genGroupByEntityId.get(actor.Hash);
     if (genGroup === undefined) {
-      genGroup = nextGenGroupId++;
+      genGroup = genGroupIdGenerator.generateId();
     }
 
     try {
