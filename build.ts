@@ -144,6 +144,8 @@ function getMapNameForOpenWorldStage(filePath: string) {
     level = 'Cave';
   } else if (filePath.includes('Castle/')) {
     level = 'Castle';
+  } else if (filePath.includes('LargeDungeon/')) {
+    level = 'LargeDungeon';
   } else if (filePath.includes('MinusField/')) {
     level = 'Depths';
   } else if (filePath.includes('MainField/')) {
@@ -357,7 +359,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
 
 
 function processBancs() {
-  const fields = ["MainField", "MinusField", "MainField/Sky", "MainField/Cave", "MainField/DeepHole", "MainField/Castle"];
+  const fields = ["MainField", "MinusField", "MainField/Sky", "MainField/Cave", "MainField/DeepHole", "MainField/Castle", "MainField/LargeDungeon"];
   for (const field of fields) {
     const dirPath = path.join(totkData, field);
     let files = fs.readdirSync(dirPath);
