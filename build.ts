@@ -43,9 +43,7 @@ db.exec(`
    drops TEXT,
    equip TEXT,
    ui_drops TEXT,
-   ui_equip TEXT,
-   korok_id TEXT,
-   korok_type TEXT
+   ui_equip TEXT
   );
 
   CREATE TABLE ai_groups (
@@ -67,12 +65,11 @@ db.exec(`
 
 const NAMES = JSON.parse(fs.readFileSync('names.json', 'utf8'))
 const LOCATIONS = JSON.parse(fs.readFileSync('LocationMarker.json', 'utf8'))
-const KOROKS = JSON.parse(fs.readFileSync('koroks_id.json', 'utf8'))
 
 const insertObj = db.prepare(`INSERT INTO objs
-  (map_type, map_name, gen_group, hash_id, unit_config_name, ui_name, data, scale, map_static, drops, equip, merged, ui_drops, ui_equip, korok_id, korok_type)
+  (map_type, map_name, gen_group, hash_id, unit_config_name, ui_name, data, scale, map_static, drops, equip, merged, ui_drops, ui_equip)
   VALUES
-  (@map_type, @map_name, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @scale, @map_static, @drops, @equip, @merged, @ui_drops, @ui_equip, @korok_id, @korok_type )`);
+  (@map_type, @map_name, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @scale, @map_static, @drops, @equip, @merged, @ui_drops, @ui_equip )`);
 
 const insertAiGroup = db.prepare(`INSERT INTO ai_groups
   (map_type, map_name, hash_id, data)
@@ -168,26 +165,6 @@ function getMapNameForOpenWorldStage(filePath: string) {
 
 function parseHash(hash: string) {
   return '0x' + BigInt(hash).toString(16).padStart(16, '0');
-}
-
-function getKorokType(hideType: number | undefined, name: string) {
-  if (name == 'KorokCarryProgressKeeper') {
-    return 'Korok Friends';
-  }
-  if (hideType == undefined) {
-    return "Rock Lift";
-  }
-  const korokTypes = ['<0-empty>',
-    'Stationary Lights', 'Dive', 'Flower Trail', 'Goal Ring (Race)', 'Moving Lights',
-    'Rock Pattern', 'Offering Plate', 'Pinwheel Balloons', 'Stationary Balloon', 'Hanging Acorn',
-    'Land on Target', 'Provide Shelter', 'Repair Roof', '<14-empty>', 'Puzzle Blocks',
-    '<16-empty>', 'Catch the Light', 'Touch the Target', 'Catch the Seed', 'Pull the Plug',
-    '<21-empty>', '<22-empty>', 'Through the Roof', 'Boulder Stand', 'Ring the Bell'
-  ];
-  if (hideType < 1 || hideType > 25) {
-    return undefined;
-  }
-  return korokTypes[hideType];
 }
 
 function processBanc(filePath: string, mapType: string, mapName: string) {
@@ -314,12 +291,6 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
     if (genGroup === undefined) {
       genGroup = genGroupIdGenerator.generateId();
     }
-    let korok_id = undefined;
-    let korok_type = undefined;
-    if (actor.Hash in KOROKS) {
-      korok_id = KOROKS[actor.Hash].id;
-      korok_type = getKorokType(actor.Dynamic?.HideType, actor.Gyaml);
-    }
 
     try {
       const result = insertObj.run({
@@ -337,8 +308,6 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
         merged: (isMerged) ? 1 : 0,
         ui_drops: JSON.stringify(ui_drops),
         ui_equip: JSON.stringify(ui_equip),
-        korok_id: (korok_id) ? korok_id : null,
-        korok_type: (korok_type) ? korok_type : null,
       });
 
       const objid = result.lastInsertRowid;
@@ -457,10 +426,10 @@ createIndexes();
 
 function createFts() {
   db.exec(`
-    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", tokenize="unicode61", map, actor, name, data, scale, drops, ui_drops, equip, ui_equip, hash_id, korok_id, korok_type);
+    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", tokenize="unicode61", map, actor, name, data, scale, drops, ui_drops, equip, ui_equip, hash_id);
 
-    INSERT INTO objs_fts(rowid, map, actor, name, data, scale, drops, ui_drops, equip, ui_equip, hash_id, korok_id, korok_type )
-    SELECT objid, map_type || '/' || map_name, unit_config_name, ui_name, data, scale, drops, ui_drops, equip, ui_equip, hash_id, korok_id, korok_type FROM objs;
+    INSERT INTO objs_fts(rowid, map, actor, name, data, scale, drops, ui_drops, equip, ui_equip, hash_id )
+    SELECT objid, map_type || '/' || map_name, unit_config_name, ui_name, data, scale, drops, ui_drops, equip, ui_equip, hash_id FROM objs;
   `);
 }
 console.log('creating FTS tables...');

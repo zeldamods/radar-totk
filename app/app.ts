@@ -47,7 +47,7 @@ function parseResult(result: any): { [key: string]: any } {
   return result;
 }
 
-const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name as name, data, scale, drops, equip, map_static, ui_drops, ui_equip, korok_id, korok_type';
+const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name as name, data, scale, drops, equip, map_static, ui_drops, ui_equip';
 
 // Returns object details for an object.
 app.get('/obj/:objid', (req, res) => {
@@ -137,9 +137,9 @@ app.get('/obj/:map_type/:map_name/:hash_id/ai_groups', (req, res) => {
       })
       .map(parseResult);
 
-    for (const entity of referencedEntities) {
-      group.referenced_entities[entity.hash_id] = entity;
-    }
+      for (const entity of referencedEntities) {
+        group.referenced_entities[entity.hash_id] = entity;
+      }
   }
 
   res.json(result);
