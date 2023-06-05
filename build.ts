@@ -268,6 +268,15 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
         if (ui_drop_actor != dyn.Drop__DropActor) {
           ui_drops.push(ui_drop_actor);
         }
+
+        const attach = dyn.Drop__DropActor_Attachment
+        if (attach) {
+          drops.push(attach);
+          let ui_drop_actor = getName(attach);
+          if (ui_drop_actor != attach) {
+            ui_drops.push(ui_drop_actor);
+          }
+        }
       }
       for (const tag of EQUIPS) {
         if (dyn[tag] && dyn[tag] != '2' && dyn[tag] != '3') {
