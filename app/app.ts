@@ -216,5 +216,14 @@ app.get('/objids/:map_type', handleReqObjids);
 app.get('/objids/:map_type/:map_name', handleReqObjids);
 
 
+function handleReqRailsTable(req: express.Request, res: express.Response) {
+  const stmt = db.prepare(`select data from rails
+      join (
+          select json_extract(value,'$.Dst') as rail_id from objs, json_each(objs.data, '$.Rails') where hash_id = ?
+      ) as t on t.rail_id = rails.hash_id`)
+  let rows = stmt.all(req.params.hash_id);
+  res.json(rows.map((row: any) => JSON.parse(row.data)));
+}
+app.get('/rail/:hash_id', handleReqRailsTable);
 
 app.listen(3008);

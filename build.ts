@@ -63,6 +63,10 @@ db.exec(`
     FOREIGN KEY(ai_group_id) REFERENCES ai_groups(id),
     FOREIGN KEY(object_id) REFERENCES objs(objid)
   );
+  CREATE TABLE rails (
+    hash_id TEXT UNIQUE,
+    data JSON NOT NULL
+  );
 `);
 
 const NAMES = JSON.parse(fs.readFileSync('names.json', 'utf8'))
@@ -84,6 +88,8 @@ const insertAiGroupReference = db.prepare(`INSERT INTO ai_group_references
   VALUES
   (@ai_group_id, @object_id)
 `);
+
+const insertRail = db.prepare(`INSERT INTO rails (hash_id, data) VALUES (@hash_id, @data)`);
 
 function getName(name: string) {
   if (name in NAMES) {
@@ -223,6 +229,21 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
     }
   }
 
+  if (doc.Rails) {
+    for (const rail of doc.Rails) {
+      rail.Hash = parseHash(rail.Hash);
+      for (const point of rail.Points) {
+        point.Hash = parseHash(point.Hash);
+        if (point.Connections) {
+          for (const connection of point.Connections) {
+            connection.RailHash = parseHash(connection.RailHash);
+          }
+        }
+      }
+      insertRail.run({ hash_id: rail.Hash, data: JSON.stringify(rail) });
+    }
+  }
+
   const aiGroupsByEntityId: Map<String, any[]> = new Map();
   for (const group of (doc.AiGroups || [])) {
     const result = insertAiGroup.run({
@@ -314,6 +335,11 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
       for (const link of actor.Links) {
         link.Dst = parseHash(link.Dst);
         link.Src = parseHash(link.Src);
+      }
+    }
+    if (actor.Rails) {
+      for (const rail of actor.Rails) {
+        rail.Dst = parseHash(rail.Dst);
       }
     }
 
