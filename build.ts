@@ -67,11 +67,19 @@ db.exec(`
     hash_id TEXT UNIQUE,
     data JSON NOT NULL
   );
+  CREATE TABLE drop_tables (
+    unit_config_name TEXT NOT NULL,
+    table_name TEXT NOT NULL,
+    data JSON NOT NULL
+  );
 `);
 
 const NAMES = JSON.parse(fs.readFileSync('names.json', 'utf8'))
 const LOCATIONS = JSON.parse(fs.readFileSync('LocationMarker.json', 'utf8'))
 const KOROKS = JSON.parse(fs.readFileSync('koroks_id.json', 'utf8'))
+const DROP_TABLES = JSON.parse(fs.readFileSync('drop_tables.json', 'utf8'))
+
+const DropTableDefault = "Default";
 
 const insertObj = db.prepare(`INSERT INTO objs
   (map_type, map_name, gen_group, hash_id, unit_config_name, ui_name, data, scale, map_static, drops, equip, merged, ui_drops, ui_equip, korok_id, korok_type)
@@ -88,6 +96,8 @@ const insertAiGroupReference = db.prepare(`INSERT INTO ai_group_references
   VALUES
   (@ai_group_id, @object_id)
 `);
+
+const insertDrops = db.prepare(`INSERT INTO drop_tables (unit_config_name, table_name, data) VALUES (@unit_config_name, @table_name, @data)`);
 
 const insertRail = db.prepare(`INSERT INTO rails (hash_id, data) VALUES (@hash_id, @data)`);
 
@@ -299,6 +309,18 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
           }
         }
       }
+      // If DropTable and DropActor do not exist and an blank drop exists
+      //   set the DropTable name to as 'Default'
+      if (!dyn.Drop__DropTable && !dyn.Drop__DropActor) {
+        if (actor.Gyaml in DROP_TABLES) {
+          for (const table of DROP_TABLES[actor.Gyaml]) {
+            if (table.DropTableName == "") {
+              drops.push(2);
+              drops.push(DropTableDefault);
+            }
+          }
+        }
+      }
       for (const tag of EQUIPS) {
         if (dyn[tag] && dyn[tag] != '2' && dyn[tag] != '3') {
           equip.push(dyn[tag]);
@@ -472,7 +494,19 @@ function processRecycleBox() {
     }
   }
 }
+function processDropTables() {
+  for (const actor of Object.keys(DROP_TABLES)) {
+    for (const data of DROP_TABLES[actor]) {
+      let table_name = data.DropTableName;
+      if (table_name == "") {
+        table_name = DropTableDefault;
+      }
+      insertDrops.run({ unit_config_name: actor, table_name: table_name, data: JSON.stringify(data) });
+    }
+  }
+}
 
+db.transaction(() => processDropTables())();
 db.transaction(() => processBancs())();
 db.transaction(() => processRecycleBox())();
 
