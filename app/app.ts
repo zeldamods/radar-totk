@@ -226,4 +226,24 @@ function handleReqRailsTable(req: express.Request, res: express.Response) {
 }
 app.get('/rail/:hash_id', handleReqRailsTable);
 
+function handleReqDropTable(req: express.Request, res: express.Response) {
+  const actorName: string | undefined = req.params.actor_name; // Matches unit_config_name in table objs
+  const tableName: string | undefined = req.params.table_name;
+  let rows = [];
+  if (!tableName) {
+    // Return available drop table names if none provided
+    const stmt = db.prepare(`SELECT table_name from drop_tables where unit_config_name = ?`);
+    rows = stmt.all(actorName);
+  } else {
+    const stmt = db.prepare(`SELECT data from drop_tables where unit_config_name = ? and table_name like ? `);
+    rows = stmt.get(actorName, tableName);
+    if (rows && rows.data) {
+      rows = JSON.parse(rows.data);
+    }
+  }
+  res.json(rows);
+}
+app.get('/drop/:actor_name/:table_name', handleReqDropTable);
+app.get('/drop/:actor_name', handleReqDropTable);
+
 app.listen(3008);

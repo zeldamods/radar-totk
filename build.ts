@@ -67,11 +67,22 @@ db.exec(`
     hash_id TEXT UNIQUE,
     data JSON NOT NULL
   );
+  CREATE TABLE drop_tables (
+    unit_config_name TEXT NOT NULL,
+    table_name TEXT NOT NULL,
+    data JSON NOT NULL
+  );
 `);
 
 const NAMES = JSON.parse(fs.readFileSync('names.json', 'utf8'))
 const LOCATIONS = JSON.parse(fs.readFileSync('LocationMarker.json', 'utf8'))
 const KOROKS = JSON.parse(fs.readFileSync('koroks_id.json', 'utf8'))
+const DROP_TABLES = JSON.parse(fs.readFileSync('drop_tables.json', 'utf8'))
+
+const DropTableDefault = "Default";
+const DROP_TYPE_ACTOR = "Actor";
+const DROP_TYPE_TABLE = "Table";
+
 
 const insertObj = db.prepare(`INSERT INTO objs
   (map_type, map_name, gen_group, hash_id, unit_config_name, ui_name, data, scale, map_static, drops, equip, merged, ui_drops, ui_equip, korok_id, korok_type)
@@ -88,6 +99,8 @@ const insertAiGroupReference = db.prepare(`INSERT INTO ai_group_references
   VALUES
   (@ai_group_id, @object_id)
 `);
+
+const insertDrops = db.prepare(`INSERT INTO drop_tables (unit_config_name, table_name, data) VALUES (@unit_config_name, @table_name, @data)`);
 
 const insertRail = db.prepare(`INSERT INTO rails (hash_id, data) VALUES (@hash_id, @data)`);
 
@@ -271,7 +284,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
   for (const actor of doc.Actors) {
     let ui_name = getName(actor.Gyaml);
 
-    let drops: any = [];
+    let drops: any = {};
     let equip: any = [];
     let ui_drops: any = [];
     let ui_equip: any = [];
@@ -279,12 +292,10 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
     if (actor.Dynamic) {
       const dyn = actor.Dynamic;
       if (dyn.Drop__DropTable) {
-        drops.push(2);
-        drops.push(dyn.Drop__DropTable);
+        drops = { type: DROP_TYPE_TABLE, value: [dyn.Drop__DropTable] };
       }
       if (dyn.Drop__DropActor) {
-        drops.push(1);
-        drops.push(dyn.Drop__DropActor);
+        drops = { type: DROP_TYPE_ACTOR, value: [dyn.Drop__DropActor] }
         let ui_drop_actor = getName(dyn.Drop__DropActor);
         if (ui_drop_actor != dyn.Drop__DropActor) {
           ui_drops.push(ui_drop_actor);
@@ -292,7 +303,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
 
         const attach = dyn.Drop__DropActor_Attachment
         if (attach) {
-          drops.push(attach);
+          drops.value.push(attach);
           let ui_drop_actor = getName(attach);
           if (ui_drop_actor != attach) {
             ui_drops.push(ui_drop_actor);
@@ -317,6 +328,18 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
         ui_name += ' ' + LOCATIONS[dyn.Location];
       }
     }
+    // If DropTable and DropActor do not exist and an blank drop exists
+    //   set the DropTable name to as 'Default'
+    if (Object.keys(drops).length == 0) {
+      if (actor.Gyaml in DROP_TABLES) {
+        for (const table of DROP_TABLES[actor.Gyaml]) {
+          if (table.DropTableName == "") {
+            drops = { type: DROP_TYPE_TABLE, value: [DropTableDefault] };
+          }
+        }
+      }
+    }
+
 
     if (mapType === "Totk" && mapName.includes('Z-0')) {
       const level = mapName.split('_')[0];
@@ -366,7 +389,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
         ui_name: ui_name,
         data: JSON.stringify(actor),
         scale: actor.Dynamic?.IsLevelSensorTarget ? 1 : 0,
-        drops: (drops.length > 0) ? JSON.stringify(drops) : null,
+        drops: (Object.keys(drops).length > 0) ? JSON.stringify(drops) : null,
         equip: (equip.length > 0) ? JSON.stringify(equip) : null,
         map_static: (isStatic) ? 1 : 0,
         merged: (isMerged) ? 1 : 0,
@@ -472,7 +495,19 @@ function processRecycleBox() {
     }
   }
 }
+function processDropTables() {
+  for (const actor of Object.keys(DROP_TABLES)) {
+    for (const data of DROP_TABLES[actor]) {
+      let table_name = data.DropTableName;
+      if (table_name == "") {
+        table_name = DropTableDefault;
+      }
+      insertDrops.run({ unit_config_name: actor, table_name: table_name, data: JSON.stringify(data) });
+    }
+  }
+}
 
+db.transaction(() => processDropTables())();
 db.transaction(() => processBancs())();
 db.transaction(() => processRecycleBox())();
 
