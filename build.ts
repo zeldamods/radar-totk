@@ -80,6 +80,9 @@ const KOROKS = JSON.parse(fs.readFileSync('koroks_id.json', 'utf8'))
 const DROP_TABLES = JSON.parse(fs.readFileSync('drop_tables.json', 'utf8'))
 
 const DropTableDefault = "Default";
+const DropActor = 1;
+const DropTable = 2;
+
 
 const insertObj = db.prepare(`INSERT INTO objs
   (map_type, map_name, gen_group, hash_id, unit_config_name, ui_name, data, scale, map_static, drops, equip, merged, ui_drops, ui_equip, korok_id, korok_type)
@@ -289,11 +292,11 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
     if (actor.Dynamic) {
       const dyn = actor.Dynamic;
       if (dyn.Drop__DropTable) {
-        drops.push(2);
+        drops.push(DropTable);
         drops.push(dyn.Drop__DropTable);
       }
       if (dyn.Drop__DropActor) {
-        drops.push(1);
+        drops.push(DropActor);
         drops.push(dyn.Drop__DropActor);
         let ui_drop_actor = getName(dyn.Drop__DropActor);
         if (ui_drop_actor != dyn.Drop__DropActor) {
@@ -315,7 +318,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
         if (actor.Gyaml in DROP_TABLES) {
           for (const table of DROP_TABLES[actor.Gyaml]) {
             if (table.DropTableName == "") {
-              drops.push(2);
+              drops.push(DropTable);
               drops.push(DropTableDefault);
             }
           }
