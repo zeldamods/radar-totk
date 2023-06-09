@@ -6,12 +6,17 @@ import { Beco } from './beco';
 
 let parseArgs = require('minimist');
 let argv = parseArgs(process.argv);
-if (!argv.d) {
-  console.log("Error: Must specify a path to directory with Banc extracted YAML files");
-  console.log("       e.g. % ts-node build.ts -d path/to/Banc")
+if (!argv.d || !argv.b || !argv.e) {
+  console.log("Error: Must specify paths to directories with ");
+  console.log("          -d Banc extracted YAML files");
+  console.log("          -b field map area beco files");
+  console.log("          -e Ecosystem json files");
+  console.log("       e.g. % ts-node build.ts -d path/to/Banc -b path/to/beco -e path/to/Ecosystem")
   process.exit(1);
 }
 const totkData = argv.d
+const becoPath = argv.b;
+const ecoPath = argv.e;
 
 fs.rmSync('map.db.tmp', { force: true });
 const db = sqlite3('map.db.tmp');
@@ -85,13 +90,14 @@ const DROP_TYPE_ACTOR = "Actor";
 const DROP_TYPE_TABLE = "Table";
 
 
-const BecoGround = new Beco('Ground.beco');
-const BecoMinus = new Beco('MinusField.beco');
-const BecoSky = new Beco('Sky.beco');
-const BecoCave = new Beco('Cave.beco');
+const BecoGround = new Beco(path.join(becoPath, 'Ground.beco'));
+const BecoMinus = new Beco(path.join(becoPath, 'MinusField.beco'));
+const BecoSky = new Beco(path.join(becoPath, 'Sky.beco'));
+const BecoCave = new Beco(path.join(becoPath, 'Cave.beco'));
 
+// Should probably be yaml not json for consistency
 const Ecosystem = Object.fromEntries(['Cave', 'Ground', 'MinusField', 'Sky'].map(name => {
-  return [name, JSON.parse(fs.readFileSync(`${name}.ecocat.json`, 'utf8')).RootNode];
+  return [name, JSON.parse(fs.readFileSync(path.join(ecoPath, `${name}.ecocat.json`), 'utf8')).RootNode];
 }));
 
 
