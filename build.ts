@@ -2,15 +2,21 @@ import sqlite3 from 'better-sqlite3';
 import fs from 'fs';
 import yaml from 'js-yaml';
 import path from 'path';
+import { Beco } from './beco';
 
 let parseArgs = require('minimist');
 let argv = parseArgs(process.argv);
-if (!argv.d) {
-  console.log("Error: Must specify a path to directory with Banc extracted YAML files");
-  console.log("       e.g. % ts-node build.ts -d path/to/Banc")
+if (!argv.d || !argv.b || !argv.e) {
+  console.log("Error: Must specify paths to directories with ");
+  console.log("          -d Banc extracted YAML files");
+  console.log("          -b field map area beco files");
+  console.log("          -e Ecosystem json files");
+  console.log("       e.g. % ts-node build.ts -d path/to/Banc -b path/to/beco -e path/to/Ecosystem")
   process.exit(1);
 }
 const totkData = argv.d
+const becoPath = argv.b;
+const ecoPath = argv.e;
 
 fs.rmSync('map.db.tmp', { force: true });
 const db = sqlite3('map.db.tmp');
@@ -84,6 +90,17 @@ const DROP_TYPE_ACTOR = "Actor";
 const DROP_TYPE_TABLE = "Table";
 
 
+const BecoGround = new Beco(path.join(becoPath, 'Ground.beco'));
+const BecoMinus = new Beco(path.join(becoPath, 'MinusField.beco'));
+const BecoSky = new Beco(path.join(becoPath, 'Sky.beco'));
+const BecoCave = new Beco(path.join(becoPath, 'Cave.beco'));
+
+// Should probably be yaml not json for consistency
+const Ecosystem = Object.fromEntries(['Cave', 'Ground', 'MinusField', 'Sky'].map(name => {
+  return [name, JSON.parse(fs.readFileSync(path.join(ecoPath, `${name}.ecocat.json`), 'utf8')).RootNode];
+}));
+
+
 const insertObj = db.prepare(`INSERT INTO objs
   (map_type, map_name, gen_group, hash_id, unit_config_name, ui_name, data, scale, map_static, drops, equip, merged, ui_drops, ui_equip, korok_id, korok_type)
   VALUES
@@ -150,6 +167,17 @@ export function pointToMapUnit(p: number[]) {
     + String.fromCharCode('1'.charCodeAt(0) + row);
 }
 
+function getEcosystemArea(name: string, num: number) {
+  if (Ecosystem[name][num].AreaNumber == num) {
+    return Ecosystem[name][num];
+  }
+  for (const area of Ecosystem[name]) {
+    if (area.AreaNumber == num) {
+      return area;
+    }
+  }
+  return null;
+}
 
 function getMapNameForOpenWorldStage(filePath: string) {
   // Almost everything, except MinusField must come before MainField
@@ -328,6 +356,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
         ui_name += ' ' + LOCATIONS[dyn.Location];
       }
     }
+
     // If DropTable and DropActor do not exist and an blank drop exists
     //   set the DropTable name to as 'Default'
     if (Object.keys(drops).length == 0) {
@@ -340,6 +369,28 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
       }
     }
 
+    if (actor.Gyaml == 'Npc_MinusFieldGhost_000') {
+      const num = BecoMinus.getCurrentAreaNum(actor.Translate[0], actor.Translate[2]);
+      const area = getEcosystemArea('MinusField', num);
+      let weapon_type = actor.Dynamic?.HoldingWeaponType || 1;
+      let weapons = []
+      if (weapon_type == 1) {
+        // Royal Broadsword ( 0x83ba246d992d663b)
+        // Eightfold Blade (  0x70f7cb89ab7052e0)
+        weapons = area.NotDecayedSmallSwordList;
+      } else if (weapon_type == 2) {
+        // Royal Guards Claymore ( 0x0a73b302f59153b7)
+        // Traveler's Claymore ( 0xec225a9dfda4679e)
+        weapons = area.NotDecayedLargeSwordList;
+      } else if (weapon_type == 3) {
+        // Knight's Halberd ( 0x0cde450be4231a97)
+        // Travelers Spear (  0x0e4718a9b20afa93)
+        weapons = area.NotDecayedSpearList;
+      }
+      const names = weapons.map((weapon: any) => weapon.name);
+      equip.push(...names);
+      ui_equip.push(...names.map((name: string) => getName(name)));
+    }
 
     if (mapType === "Totk" && mapName.includes('Z-0')) {
       const level = mapName.split('_')[0];
