@@ -34,10 +34,8 @@ function parseResult(result: any): { [key: string]: any } {
   result.data = JSON.parse(result.data);
   result.drop = JSON.parse(result.drops); // change from drops to drop
   result.drops = undefined;
-  result.ui_drop = JSON.parse(result.ui_drops);
 
   result.equip = JSON.parse(result.equip);
-  result.ui_equip = JSON.parse(result.ui_equip);
   result.Location = result.data?.Dynamic?.Location;
   if (result.data.Translate)
     result.pos = result.data.Translate.map((v: number) => Math.round(v * 100) / 100);
@@ -46,7 +44,7 @@ function parseResult(result: any): { [key: string]: any } {
   return result;
 }
 
-const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name as name, data, scale, drops, equip, map_static, ui_drops, ui_equip, korok_id, korok_type';
+const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name as name, data, scale, drops, equip, map_static, korok_id, korok_type';
 
 // Returns object details for an object.
 app.get('/obj/:objid', (req, res) => {
