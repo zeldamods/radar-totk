@@ -468,7 +468,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
 
 
 function processBancs() {
-  const fields = ["MainField", "MinusField", "MainField/Sky", "MainField/Cave", "MainField/DeepHole", "MainField/Castle", "MainField/LargeDungeon"];
+  const fields = ["MainField", "MinusField", "MainField/Sky", "MainField/Cave", "MainField/DeepHole", "MainField/Castle", "MainField/LargeDungeon", "MinusField/LargeDungeon"];
   for (const field of fields) {
     const dirPath = path.join(totkData, field);
     let files = fs.readdirSync(dirPath);
