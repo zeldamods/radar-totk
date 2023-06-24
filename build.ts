@@ -89,7 +89,6 @@ const DropTableDefault = "Default";
 const DROP_TYPE_ACTOR = "Actor";
 const DROP_TYPE_TABLE = "Table";
 
-
 const BecoGround = new Beco(path.join(becoPath, 'Ground.beco'));
 const BecoMinus = new Beco(path.join(becoPath, 'MinusField.beco'));
 const BecoSky = new Beco(path.join(becoPath, 'Sky.beco'));
@@ -100,6 +99,16 @@ const Ecosystem = Object.fromEntries(['Cave', 'Ground', 'MinusField', 'Sky'].map
   return [name, JSON.parse(fs.readFileSync(path.join(ecoPath, `${name}.ecocat.json`), 'utf8')).RootNode];
 }));
 
+const MapPctTmp = JSON.parse(fs.readFileSync('map_pct.json', 'utf8'))
+let MapPct: { [key: string]: any } = {};
+for (const kind of Object.keys(MapPctTmp)) {
+  for (const entry of MapPctTmp[kind]) {
+    for (const hash_id of entry.hash_id) {
+      MapPct[hash_id] = entry;
+      MapPct[hash_id].kind = kind;
+    }
+  }
+}
 
 const insertObj = db.prepare(`INSERT INTO objs
   (map_type, map_name, gen_group, hash_id, unit_config_name, ui_name, data, scale, map_static, drops, equip, merged, ui_drops, ui_equip, korok_id, korok_type)
@@ -416,7 +425,12 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
         rail.Dst = parseHash(rail.Dst);
       }
     }
-
+    if (actor.Hash in MapPct) {
+      actor.MapPct = {
+        category: MapPct[actor.Hash].kind,
+        flag: MapPct[actor.Hash].flag,
+      }
+    }
     const isMerged = actor.Gyaml.includes('MergedActor');
 
     let genGroup = genGroupByEntityId.get(actor.Hash);
