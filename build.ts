@@ -448,11 +448,15 @@ function processBancs() {
       let filePath = path.join(dirPath, file);
 
       //const mapName = getMapNameForOpenWorldStage(filePath);
-      const mapType = field.replace("/", "__");
-      const mapName = file
+      const fieldParts = field.split("/");
+      let mapName = file
         .replace(".bcett.yml", "")
         .replace("_Static", "")
         .replace("_Dynamic", "");
+      const mapType = fieldParts[0];
+      if (fieldParts.length == 2) {
+        mapName = `${fieldParts[1]}__${mapName} `;
+      }
       processBanc(filePath, mapType, mapName);
     }
   }
