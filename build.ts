@@ -447,7 +447,6 @@ function processBancs() {
         continue;
       let filePath = path.join(dirPath, file);
 
-      //const mapName = getMapNameForOpenWorldStage(filePath);
       const fieldParts = field.split("/");
       let mapName = file
         .replace(".bcett.yml", "")

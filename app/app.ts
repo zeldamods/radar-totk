@@ -170,10 +170,14 @@ function handleReqObjs(req: express.Request, res: express.Response) {
 
   let mapNameQuery = mapName ? `AND map_name = @map_name` : '';
   if (mapType == 'MainField' && mapName) {
-    if (['Sky', 'Cave', 'DeepHole'].includes(mapName))
-      mapNameQuery = ` AND map_name like '${mapName}__%' `;
+    if (mapName == 'Sky')
+      mapNameQuery = ` AND map_name glob 'Sky__%' `;
+    else if (mapName == 'Cave')
+      mapNameQuery = ` AND map_name glob 'Cave__%' `;
+    else if (mapName == 'DeepHole')
+      mapNameQuery = ` AND map_name glob 'DeepHole__%' `;
     else if (mapName == 'Surface')
-      mapNameQuery = ` AND map_name like '_-_' `; // Surface map_name, e.g. A-1, C-4, ...
+      mapNameQuery = ` AND map_name glob '_-_' `; // Surface map_name, e.g. A-1, C-4, ...
   }
   const mapTypeQuery = (mapType == "Any") ? ` (map_type = 'MainField' OR map_type = 'MinusField') ` : 'map_type = @map_type';
   const limitQuery = limit != -1 ? 'LIMIT @limit' : '';
@@ -256,12 +260,11 @@ app.get('/drop/:actor_name', handleReqDropTable);
 
 
 app.get('/region/:region/:x/:z', (req: express.Request, res: express.Response) => {
+  const maxDistance = 200;
   const pt = [parseFloat(req.params.x), 0, parseFloat(req.params.z)];
   if (req.params.region == "Sky") {
-    const indexes = findPolygons(pt, SKY_POLYS, 200);
-    const names = SKY_POLYS.features
-      .filter((feat: any, i: number) => indexes.includes(i))
-      .map((feat: any) => feat.properties.group);
+    const names = findPolygons(pt, SKY_POLYS, maxDistance)
+      .map(i => SKY_POLYS.features[i].properties.group);
     res.json(names)
   }
 });
