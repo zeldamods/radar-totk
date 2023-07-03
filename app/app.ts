@@ -179,7 +179,7 @@ function handleReqObjs(req: express.Request, res: express.Response) {
     else if (mapName == 'Surface')
       mapNameQuery = ` AND map_name glob '_-_' `; // Surface map_name, e.g. A-1, C-4, ...
   }
-  const mapTypeQuery = (mapType == "Any") ? ` (map_type = 'MainField' OR map_type = 'MinusField') ` : 'map_type = @map_type';
+  const mapTypeQuery = (mapType == "MainAndMinusField") ? ` (map_type = 'MainField' OR map_type = 'MinusField') ` : 'map_type = @map_type';
   const limitQuery = limit != -1 ? 'LIMIT @limit' : '';
   const query = `SELECT ${FIELDS} FROM objs
     WHERE ${mapTypeQuery} ${mapNameQuery}
