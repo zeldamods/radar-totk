@@ -1,4 +1,4 @@
-import { Position, Polygon, Feature, FeatureCollection } from 'GeoJSON';
+import { Position, Polygon, Feature, FeatureCollection } from 'geojson';
 
 type PointXY = {
   x: number,
