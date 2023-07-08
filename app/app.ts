@@ -1,3 +1,4 @@
+import fs from 'fs';
 import sqlite3 from 'better-sqlite3';
 // @ts-ignore
 import cors from 'cors';
@@ -6,6 +7,9 @@ import path from 'path';
 import responseTime from 'response-time';
 
 import * as util from './util';
+import { findPolygons } from '../pointInPoly';
+
+const SKY_POLYS = JSON.parse(fs.readFileSync('./tools/sky_polys.json', 'utf8'))
 
 const db = sqlite3(path.join(util.APP_ROOT, 'map.db'), {
   // @ts-ignore
@@ -164,10 +168,21 @@ function handleReqObjs(req: express.Request, res: express.Response) {
     return x;
   };
 
-  const mapNameQuery = mapName ? `AND map_name = @map_name` : '';
+  let mapNameQuery = mapName ? `AND map_name = @map_name` : '';
+  if (mapType == 'MainField' && mapName) {
+    if (mapName == 'Sky')
+      mapNameQuery = ` AND map_name glob 'Sky__%' `;
+    else if (mapName == 'Cave')
+      mapNameQuery = ` AND map_name glob 'Cave__%' `;
+    else if (mapName == 'DeepHole')
+      mapNameQuery = ` AND map_name glob 'DeepHole__%' `;
+    else if (mapName == 'Surface')
+      mapNameQuery = ` AND map_name glob '_-_' `; // Surface map_name, e.g. A-1, C-4, ...
+  }
+  const mapTypeQuery = (mapType == "MainAndMinusField") ? ` (map_type = 'MainField' OR map_type = 'MinusField') ` : 'map_type = @map_type';
   const limitQuery = limit != -1 ? 'LIMIT @limit' : '';
   const query = `SELECT ${FIELDS} FROM objs
-    WHERE map_type = @map_type ${mapNameQuery}
+    WHERE ${mapTypeQuery} ${mapNameQuery}
     ${selectAll ? "" : "AND objid in (SELECT rowid FROM objs_fts(@q))"}
     ${limitQuery}`;
 
@@ -242,5 +257,16 @@ function handleReqDropTable(req: express.Request, res: express.Response) {
 }
 app.get('/drop/:actor_name/:table_name', handleReqDropTable);
 app.get('/drop/:actor_name', handleReqDropTable);
+
+
+app.get('/region/:region/:x/:z', (req: express.Request, res: express.Response) => {
+  const maxDistance = 200;
+  const pt = [parseFloat(req.params.x), 0, parseFloat(req.params.z)];
+  if (req.params.region == "Sky") {
+    const names = findPolygons(pt, SKY_POLYS, maxDistance)
+      .map(i => SKY_POLYS.features[i].properties.group);
+    res.json(names)
+  }
+});
 
 app.listen(3008);

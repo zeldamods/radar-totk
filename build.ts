@@ -188,40 +188,6 @@ function getEcosystemArea(name: string, num: number) {
   return null;
 }
 
-function getMapNameForOpenWorldStage(filePath: string) {
-  // Almost everything, except MinusField must come before MainField
-  //   as they are included in the MainField directory
-  let level = "";
-  if (filePath.includes('Sky/')) {
-    level = 'Sky';
-  } else if (filePath.includes('DeepHole/')) {
-    level = 'DeepHole';
-  } else if (filePath.includes('Cave/')) {
-    level = 'Cave';
-  } else if (filePath.includes('Castle/')) {
-    level = 'Castle';
-  } else if (filePath.includes('LargeDungeon/')) {
-    level = 'LargeDungeon';
-  } else if (filePath.includes('MinusField/')) {
-    level = 'Depths';
-  } else if (filePath.includes('MainField/')) {
-    level = 'Surface';
-  } else {
-    console.log("Unknown Map Name:", filePath)
-    process.exit(1)
-  }
-  //const quad = path.basename(filePath).split('.')[0].split('_').slice(-2, -1);
-  let quad = "";
-  const base = path.basename(filePath);
-  const idx = base.indexOf('-');
-  if (idx > 0) {
-    quad = base.slice(idx - 1, idx + 2);
-  } else {
-    quad = 'Z-0';
-  }
-  return `${level}_${quad}`;
-}
-
 function parseHash(hash: string) {
   return '0x' + BigInt(hash).toString(16).padStart(16, '0');
 }
@@ -401,16 +367,6 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
       ui_equip.push(...names.map((name: string) => getName(name)));
     }
 
-    if (mapType === "Totk" && mapName.includes('Z-0')) {
-      const level = mapName.split('_')[0];
-      if (actor.Translate) {
-        const quad = pointToMapUnit(actor.Translate);
-        mapName = `${level}_${quad}`
-      } else {
-        console.log(actor);
-        mapName = `${level}`
-      }
-    }
     if (actor.Phive?.Placement?.ID) {
       actor.Phive.Placement.ID = parseHash(actor.Phive.Placement.ID);
     }
@@ -491,8 +447,16 @@ function processBancs() {
         continue;
       let filePath = path.join(dirPath, file);
 
-      const mapName = getMapNameForOpenWorldStage(filePath);
-      processBanc(filePath, "Totk", mapName);
+      const fieldParts = field.split("/");
+      let mapName = file
+        .replace(".bcett.yml", "")
+        .replace("_Static", "")
+        .replace("_Dynamic", "");
+      const mapType = fieldParts[0];
+      if (fieldParts.length == 2) {
+        mapName = `${fieldParts[1]}__${mapName} `;
+      }
+      processBanc(filePath, mapType, mapName);
     }
   }
 
