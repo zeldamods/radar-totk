@@ -2,6 +2,7 @@ import sqlite3 from 'better-sqlite3';
 import fs from 'fs';
 import yaml from 'js-yaml';
 import path from 'path';
+
 import { Beco } from './beco';
 
 let parseArgs = require('minimist');
@@ -38,6 +39,7 @@ db.exec(`
    objid INTEGER PRIMARY KEY,
    map_type TEXT NOT NULL,
    map_name TEXT NOT NULL,
+   ui_map TEXT NOT NULL,
    gen_group INTEGER,
    hash_id TEXT UNIQUE,
    unit_config_name TEXT NOT NULL,
@@ -111,9 +113,9 @@ for (const kind of Object.keys(MapPctTmp)) {
 }
 
 const insertObj = db.prepare(`INSERT INTO objs
-  (map_type, map_name, gen_group, hash_id, unit_config_name, ui_name, data, scale, map_static, drops, equip, merged, ui_drops, ui_equip, korok_id, korok_type)
+  (map_type, map_name, ui_map, gen_group, hash_id, unit_config_name, ui_name, data, scale, map_static, drops, equip, merged, ui_drops, ui_equip, korok_id, korok_type)
   VALUES
-  (@map_type, @map_name, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @scale, @map_static, @drops, @equip, @merged, @ui_drops, @ui_equip, @korok_id, @korok_type )`);
+  (@map_type, @map_name, @ui_map, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @scale, @map_static, @drops, @equip, @merged, @ui_drops, @ui_equip, @korok_id, @korok_type )`);
 
 const insertAiGroup = db.prepare(`INSERT INTO ai_groups
   (map_type, map_name, hash_id, data)
@@ -400,10 +402,23 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
       korok_type = getKorokType(actor.Dynamic?.HideType, actor.Gyaml);
     }
 
+    const uiMap = [mapType, mapName];
+    if (mapType === 'MinusField') {
+      uiMap.push('depths');
+    } else if (mapType === 'MainField') {
+        if (mapName.startsWith('DeepHole')) {
+          uiMap.push('chasm');
+        }
+        else if (!mapName.includes('__')) {
+          uiMap.push('surface');
+        }
+    }
+
     try {
       const result = insertObj.run({
         map_type: mapType,
         map_name: mapName,
+        ui_map: uiMap.join(' '),
         gen_group: genGroup,
         hash_id: actor.Hash,
         unit_config_name: actor.Gyaml,
@@ -559,7 +574,7 @@ function createFts() {
     CREATE VIRTUAL TABLE objs_fts USING fts5(content="", tokenize="unicode61", map, actor, name, data, scale, drops, ui_drops, equip, ui_equip, hash_id, korok_id, korok_type);
 
     INSERT INTO objs_fts(rowid, map, actor, name, data, scale, drops, ui_drops, equip, ui_equip, hash_id, korok_id, korok_type )
-    SELECT objid, map_type || '/' || map_name, unit_config_name, ui_name, data, scale, drops, ui_drops, equip, ui_equip, hash_id, korok_id, korok_type FROM objs;
+    SELECT objid, ui_map, unit_config_name, ui_name, data, scale, drops, ui_drops, equip, ui_equip, hash_id, korok_id, korok_type FROM objs;
   `);
 }
 console.log('creating FTS tables...');
