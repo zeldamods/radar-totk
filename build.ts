@@ -1,3 +1,4 @@
+import { execSync } from 'child_process';
 import sqlite3 from 'better-sqlite3';
 import fs from 'fs';
 import yaml from 'js-yaml';
@@ -7,17 +8,22 @@ import { Beco } from './beco';
 
 let parseArgs = require('minimist');
 let argv = parseArgs(process.argv);
-if (!argv.d || !argv.b || !argv.e) {
-  console.log("Error: Must specify paths to directories with ");
+const validRomfsArgs = (argv.e && argv.r);
+const validFolderArgs = (argv.e && argv.b && argv.d);
+if (!validRomfsArgs && !validFolderArgs) {
+  console.log("Error: Must specify paths to directories with -e and either -r or (-b and -d)");
   console.log("          -d Banc extracted YAML files");
   console.log("          -b field map area beco files");
   console.log("          -e Ecosystem json files");
+  console.log("          -r Bare game romfs");
   console.log("       e.g. % ts-node build.ts -d path/to/Banc -b path/to/beco -e path/to/Ecosystem")
+  console.log("        or: % ts-node build.ts -r path/to/romfs -e path/to/Ecosystem")
   process.exit(1);
 }
-const totkData = argv.d
-const becoPath = argv.b;
 const ecoPath = argv.e;
+const romfsPath = argv.r;
+const totkData = argv.d || path.join(romfsPath, 'Banc');
+const becoPath = argv.b || path.join(romfsPath, 'Ecosystem', 'FieldMapArea');
 
 fs.rmSync('map.db.tmp', { force: true });
 const db = sqlite3('map.db.tmp');
@@ -87,14 +93,29 @@ const LOCATIONS = JSON.parse(fs.readFileSync('LocationMarker.json', 'utf8'))
 const KOROKS = JSON.parse(fs.readFileSync('koroks_id.json', 'utf8'))
 const DROP_TABLES = JSON.parse(fs.readFileSync('drop_tables.json', 'utf8'))
 
+const BCETT_YAML_SUFFIXES = /\.bcett\.b?yml(\.zs)?$/;
+
 const DropTableDefault = "Default";
 const DROP_TYPE_ACTOR = "Actor";
 const DROP_TYPE_TABLE = "Table";
 
-const BecoGround = new Beco(path.join(becoPath, 'Ground.beco'));
-const BecoMinus = new Beco(path.join(becoPath, 'MinusField.beco'));
-const BecoSky = new Beco(path.join(becoPath, 'Sky.beco'));
-const BecoCave = new Beco(path.join(becoPath, 'Cave.beco'));
+const getZsDicPath = (function() {
+  // Only call these tools when we need to use them, only extract zsdics once
+  let zsDicPath: string = "";
+  return function(): string {
+    if (!zsDicPath) {
+      zsDicPath = fs.mkdtempSync('zsdicpack');
+      execSync(`zstd -d "${romfsPath}/Pack/ZsDic.pack.zs" -o "${zsDicPath}/ZsDic.pack"`);
+      execSync(`sarc x --directory "${zsDicPath}" "${zsDicPath}/ZsDic.pack"`);
+    }
+    return zsDicPath;
+  };
+})();
+
+const BecoGround = new Beco(readRawBeco('Ground'));
+const BecoMinus = new Beco(readRawBeco('MinusField'));
+const BecoSky = new Beco(readRawBeco('Sky'));
+const BecoCave = new Beco(readRawBeco('Cave'));
 
 // Should probably be yaml not json for consistency
 const Ecosystem = Object.fromEntries(['Cave', 'Ground', 'MinusField', 'Sky'].map(name => {
@@ -194,6 +215,27 @@ function parseHash(hash: string) {
   return '0x' + BigInt(hash).toString(16).padStart(16, '0');
 }
 
+function readRawBeco(name: string): Buffer {
+  let filePath = path.join(becoPath, name + '.beco');
+  if (fs.existsSync(filePath)) {
+    return fs.readFileSync(filePath);
+  } else if (fs.existsSync(filePath + '.zs')) {
+    return execSync(`zstd -D "${getZsDicPath()}/zs.zsdic" -d ${filePath}.zs -c`, {maxBuffer: 1073741824});
+  }
+  throw Error(`No beco file found for ${name}`);
+}
+
+function readRawYaml(filePath: string): string {
+  if (filePath.endsWith('.yml')) {
+    return fs.readFileSync(filePath, 'utf-8').toString();
+  } else if (filePath.endsWith('.byml')) {
+    return execSync(`byml_to_yml ${filePath} -`, {maxBuffer: 1073741824}).toString();
+  } else if (filePath.endsWith('.byml.zs')) {
+    return execSync(`zstd -D "${getZsDicPath()}/bcett.byml.zsdic" -d ${filePath} -c | byml_to_yml - -`, {maxBuffer: 1073741824}).toString();
+  }
+  throw Error(`No yml file found at ${filePath}`);
+}
+
 function getKorokType(hideType: number | undefined, name: string) {
   if (name == 'KorokCarryProgressKeeper') {
     return 'Korok Friends';
@@ -217,9 +259,7 @@ function getKorokType(hideType: number | undefined, name: string) {
 function processBanc(filePath: string, mapType: string, mapName: string) {
   let doc: any = null;
   try {
-    doc = yaml.load(fs.readFileSync(filePath, 'utf-8'),
-      { schema: schema }
-    );
+    doc = yaml.load(readRawYaml(filePath), { schema: schema });
   } catch (e: any) {
     console.log("Error: ", e);
     process.exit(1);
@@ -458,13 +498,13 @@ function processBancs() {
     const dirPath = path.join(totkData, field);
     let files = fs.readdirSync(dirPath);
     for (const file of files) {
-      if (!file.endsWith('.bcett.yml'))
+      if (!file.match(BCETT_YAML_SUFFIXES))
         continue;
       let filePath = path.join(dirPath, file);
 
       const fieldParts = field.split("/");
       let mapName = file
-        .replace(".bcett.yml", "")
+        .replace(BCETT_YAML_SUFFIXES, "")
         .replace("_Static", "")
         .replace("_Dynamic", "");
       const mapType = fieldParts[0];
@@ -478,12 +518,12 @@ function processBancs() {
   for (const mapType of ["SmallDungeon", "LargeDungeon", "NormalStage"]) {
     const dirPath = path.join(totkData, mapType);
     for (const file of fs.readdirSync(dirPath)) {
-      if (!file.endsWith('.bcett.yml'))
+      if (!file.match(BCETT_YAML_SUFFIXES))
         continue;
 
       const filePath = path.join(dirPath, file);
       const mapName = file
-        .replace(".bcett.yml", "")
+        .replace(BCETT_YAML_SUFFIXES, "")
         .replace("_Static", "")
         .replace("_Dynamic", "");
       processBanc(filePath, mapType, mapName);
@@ -511,8 +551,7 @@ function processRecycleBox() {
       console.log("process recyclebox: ", filePath)
       let doc: any = null;
       try {
-        doc = yaml.load(fs.readFileSync(filePath, 'utf-8'),
-          { schema: schema });
+        doc = yaml.load(readRawYaml(filePath), { schema: schema });
       } catch (e: any) {
         console.log("Error: ", e);
         process.exit(1);
