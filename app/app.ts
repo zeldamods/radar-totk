@@ -221,7 +221,7 @@ function handleReqObjids(req: express.Request, res: express.Response) {
   const mapTypeQuery = generateMapTypeQueryCondition(req.params.map_type);
   const mapNameQuery = mapName ? `AND map_name = @map_name` : '';
   const query = `SELECT objid FROM objs
-    WHERE map_type = ${mapTypeQuery} ${mapNameQuery}
+    WHERE ${mapTypeQuery} ${mapNameQuery}
       AND objid in (SELECT rowid FROM objs_fts(@q))`;
 
   const stmt = db.prepare(query);
