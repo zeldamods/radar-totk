@@ -3,6 +3,10 @@ A server for querying placement objects in *The Legend of Zelda: Tears of the Ki
 
 Run build.ts to generate a map database before starting the server for the first time.
 
+    ts-node build.ts -d ../totk/Banc
+
+This assumes the `totk/Banc` directory contains the YAML data object map files
+
     ts-node build.ts -r ../totk -e tools
 
 This assumes the `totk` directory contains the unaltered romfs contents.

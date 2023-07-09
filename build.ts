@@ -7,17 +7,22 @@ import { Beco } from './beco';
 
 let parseArgs = require('minimist');
 let argv = parseArgs(process.argv);
-if (!argv.e || !argv.r) {
-  console.log("Error: Must specify paths to directories with ");
+const validRomfsArgs = (argv.e && argv.r);
+const validFolderArgs = (argv.e && argv.b && argv.d);
+if (!validRomfsArgs && !validFolderArgs) {
+  console.log("Error: Must specify paths to directories with -e and either -r or (-b and -d)");
+  console.log("          -d Banc extracted YAML files");
+  console.log("          -b field map area beco files");
   console.log("          -e Ecosystem json files");
   console.log("          -r Bare game romfs");
-  console.log("       e.g. % ts-node build.ts -r path/to/romfs -e tools")
+  console.log("       e.g. % ts-node build.ts -d path/to/Banc -b path/to/beco -e path/to/Ecosystem")
+  console.log("        or: % ts-node build.ts -r path/to/romfs -e path/to/Ecosystem")
   process.exit(1);
 }
 const ecoPath = argv.e;
 const romfsPath = argv.r;
-const totkData = path.join(romfsPath, 'Banc');
-const becoPath = path.join(romfsPath, 'Ecosystem', 'FieldMapArea');
+const totkData = argv.d || path.join(romfsPath, 'Banc');
+const becoPath = argv.b || path.join(romfsPath, 'Ecosystem', 'FieldMapArea');
 
 fs.rmSync('map.db.tmp', { force: true });
 const db = sqlite3('map.db.tmp');
