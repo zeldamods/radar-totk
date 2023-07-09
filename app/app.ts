@@ -1,13 +1,13 @@
-import fs from 'fs';
 import sqlite3 from 'better-sqlite3';
 // @ts-ignore
 import cors from 'cors';
 import express from 'express';
+import fs from 'fs';
 import path from 'path';
 import responseTime from 'response-time';
 
-import * as util from './util';
 import { findPolygons } from '../pointInPoly';
+import * as util from './util';
 
 const SKY_POLYS = JSON.parse(fs.readFileSync('./tools/sky_polys.json', 'utf8'))
 
@@ -48,6 +48,14 @@ function parseResult(result: any): { [key: string]: any } {
   return result;
 }
 
+function generateMapTypeQueryCondition(mapType: string, sqlParamName = "@map_type"): string {
+  if (mapType === 'MainAndMinusField') {
+    return `(map_type = 'MainField' OR map_type = 'MinusField')`;
+  }
+
+  return `map_type = ${sqlParamName}`;
+}
+
 const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name as name, data, scale, drops, equip, map_static, korok_id, korok_type';
 
 // Returns object details for an object.
@@ -65,7 +73,7 @@ app.get('/obj/:objid', (req, res) => {
 // Returns object details for an object.
 app.get('/obj/:map_type/:map_name/:hash_id', (req, res) => {
   const stmt = db.prepare(`SELECT ${FIELDS} FROM objs
-    WHERE map_type = @map_type
+    WHERE ${generateMapTypeQueryCondition(req.params.map_type)}
       AND map_name = @map_name
       AND hash_id = @hash_id LIMIT 1`);
   const result = parseResult(stmt.get({
@@ -95,7 +103,7 @@ app.get('/obj/:map_type/:map_name/:hash_id/gen_group', (req, res) => {
   const result = db.prepare(`SELECT ${FIELDS} FROM objs
     WHERE gen_group =
        (SELECT gen_group FROM objs
-          WHERE map_type = @map_type
+          WHERE ${generateMapTypeQueryCondition(req.params.map_type)}
             AND map_name = @map_name
             AND hash_id = @hash_id LIMIT 1)`)
     .all({
@@ -114,7 +122,7 @@ app.get('/obj/:map_type/:map_name/:hash_id/ai_groups', (req, res) => {
       ON ai_groups.id = ai_group_references.ai_group_id
     WHERE ai_group_references.object_id =
        (SELECT objid FROM objs
-          WHERE map_type = @map_type
+          WHERE ${generateMapTypeQueryCondition(req.params.map_type)}
             AND map_name = @map_name
             AND hash_id = @hash_id LIMIT 1)`)
     .all({
@@ -179,7 +187,7 @@ function handleReqObjs(req: express.Request, res: express.Response) {
     else if (mapName == 'Surface')
       mapNameQuery = ` AND map_name glob '_-_' `; // Surface map_name, e.g. A-1, C-4, ...
   }
-  const mapTypeQuery = (mapType == "MainAndMinusField") ? ` (map_type = 'MainField' OR map_type = 'MinusField') ` : 'map_type = @map_type';
+  const mapTypeQuery = generateMapTypeQueryCondition(req.params.map_type);
   const limitQuery = limit != -1 ? 'LIMIT @limit' : '';
   const query = `SELECT ${FIELDS} FROM objs
     WHERE ${mapTypeQuery} ${mapNameQuery}
@@ -210,9 +218,10 @@ function handleReqObjids(req: express.Request, res: express.Response) {
     return;
   }
 
+  const mapTypeQuery = generateMapTypeQueryCondition(req.params.map_type);
   const mapNameQuery = mapName ? `AND map_name = @map_name` : '';
   const query = `SELECT objid FROM objs
-    WHERE map_type = @map_type ${mapNameQuery}
+    WHERE map_type = ${mapTypeQuery} ${mapNameQuery}
       AND objid in (SELECT rowid FROM objs_fts(@q))`;
 
   const stmt = db.prepare(query);
