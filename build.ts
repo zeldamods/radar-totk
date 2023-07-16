@@ -86,6 +86,7 @@ const NAMES = JSON.parse(fs.readFileSync('names.json', 'utf8'))
 const LOCATIONS = JSON.parse(fs.readFileSync('LocationMarker.json', 'utf8'))
 const KOROKS = JSON.parse(fs.readFileSync('koroks_id.json', 'utf8'))
 const DROP_TABLES = JSON.parse(fs.readFileSync('drop_tables.json', 'utf8'))
+const DUNGEONS = JSON.parse(fs.readFileSync('Dungeon.json', 'utf8'))
 
 const DropTableDefault = "Default";
 const DROP_TYPE_ACTOR = "Actor";
@@ -332,6 +333,9 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
       }
       if (dyn.Location && dyn.Location in LOCATIONS) {
         ui_name += ' ' + LOCATIONS[dyn.Location];
+        if (dyn.Location.startsWith('Dungeon')) {
+          dyn.ShrineSubtitle = DUNGEONS[`${dyn.Location}_sub`]
+        }
       }
     }
 
