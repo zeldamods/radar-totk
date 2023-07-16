@@ -201,6 +201,7 @@ function getKorokType(hideType: number | undefined, name: string) {
   if (hideType == undefined) {
     return "Rock Lift";
   }
+  // Note: See below for some Hanging Acorn transmogified into Acron in a Hole
   const korokTypes = ['<0-empty>',
     'Stationary Lights', 'Dive', 'Flower Trail', 'Goal Ring (Race)', 'Moving Lights',
     'Rock Pattern', 'Offering Plate', 'Pinwheel Balloons', 'Stationary Balloon', 'Hanging Acorn',
@@ -554,6 +555,14 @@ function processDropTables() {
 db.transaction(() => processDropTables())();
 db.transaction(() => processBancs())();
 db.transaction(() => processRecycleBox())();
+db.transaction(() => {
+  console.log("Setting Acorn in a Hole Korok Type...");
+  // "Acorn in a Hole" are "Hanging Acorn" with a Obj_KorokPotFixedVine_A_01
+  db.exec(`update objs set korok_type = 'Acorn in a Hole'
+   where korok_type = 'Hanging Acorn' and gen_group in
+   (select gen_group from objs where unit_config_name = 'Obj_KorokPotFixedVine_A_01' )
+`);
+})();
 
 function createIndexes() {
   db.exec(`
