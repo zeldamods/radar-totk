@@ -67,7 +67,7 @@ db.exec(`
   CREATE TABLE ai_group_references (
     id INTEGER PRIMARY KEY,
     ai_group_id INTEGER,
-    object_id INTEGER,
+    object_id INTEGER UNIQUE,
     FOREIGN KEY(ai_group_id) REFERENCES ai_groups(id),
     FOREIGN KEY(object_id) REFERENCES objs(objid)
   );
@@ -566,6 +566,15 @@ db.transaction(() => {
    where korok_type = 'Hanging Acorn' and gen_group in
    (select gen_group from objs where unit_config_name = 'Obj_KorokPotFixedVine_A_01' )
 `);
+})();
+db.transaction(() => {
+  console.log("Adding AILogic path to data.Logic...");
+  db.exec(`
+update objs set data = json_insert(data, '$.AILogic', c.logic)
+from (select objs.objid, json_extract(ai_groups.data, '$.Logic') as logic from objs
+       join ai_group_references on ai_group_references.object_id = objs.objid
+       join ai_groups on ai_group_references.ai_group_id = ai_groups.id
+) as c where c.objid = objs.objid`);
 })();
 
 function createIndexes() {
