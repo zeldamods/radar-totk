@@ -28,9 +28,8 @@ export class Beco {
   // Offsets to row data, divided by 2 and relative to the start of the row section
   offsets: number[]; // u32, size num_rows
   segments: BecoSegment[][]; // Rows x Segments
-  constructor(file: string) {
+  constructor(buf: Buffer) {
     let little = true;
-    let buf = fs.readFileSync(file);
     let arr = new Uint8Array(buf.byteLength);
     buf.copy(arr, 0, 0, buf.byteLength);
     let dv = new DataView(arr.buffer);
