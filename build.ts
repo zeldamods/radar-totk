@@ -113,6 +113,8 @@ for (const kind of Object.keys(MapPctTmp)) {
   }
 }
 
+const ShopData = JSON.parse(fs.readFileSync(path.join(ecoPath, 'shop_data.json'), 'utf-8'))
+
 const insertObj = db.prepare(`INSERT INTO objs
   (map_type, map_name, ui_map, gen_group, hash_id, unit_config_name, ui_name, data, scale, map_static, drops, equip, merged, ui_drops, ui_equip, korok_id, korok_type)
   VALUES
@@ -219,9 +221,12 @@ function getKorokType(hideType: number | undefined, name: string) {
 function processBanc(filePath: string, mapType: string, mapName: string) {
   let doc: any = null;
   try {
-    doc = yaml.load(fs.readFileSync(filePath, 'utf-8'),
-      { schema: schema }
-    );
+    if (filePath.endsWith('.yml'))
+      doc = yaml.load(fs.readFileSync(filePath, 'utf-8'),
+        { schema: schema }
+      );
+    if (filePath.endsWith('.json'))
+      doc = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
   } catch (e: any) {
     console.log("Error: ", e);
     process.exit(1);
@@ -419,6 +424,9 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
         }
     }
 
+    if (ShopData[actor.Gyaml])
+      actor.ShopData = ShopData[actor.Gyaml]
+
     try {
       const result = insertObj.run({
         map_type: mapType,
@@ -494,6 +502,8 @@ function processBancs() {
       processBanc(filePath, mapType, mapName);
     }
   }
+
+  processBanc(path.join(ecoPath, 'merchants.json'), 'MainField', "Merchants")
 }
 
 function processRecycleBox() {
