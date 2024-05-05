@@ -12,7 +12,7 @@
   "repository": "https://github.com/zeldamods/radar",
   "dependencies": {
     "@types/geojson": "^7946.0.10",
-    "better-sqlite3": "^7.5.3",
+    "better-sqlite3": "^9.6.0",
     "cors": "^2.8.5",
     "crc-32": "^1.2.2",
     "express": "^4.18.1",
