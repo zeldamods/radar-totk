@@ -45,6 +45,8 @@ db.exec(`
    unit_config_name TEXT NOT NULL,
    ui_name TEXT NOT NULL,
    data JSON NOT NULL,
+   fieldarea TEXT,
+   region TEXT,
    scale INTEGER,
    map_static bool,
    merged bool,
@@ -96,6 +98,25 @@ const BecoGround = new Beco(path.join(becoPath, 'Ground.beco'));
 const BecoMinus = new Beco(path.join(becoPath, 'MinusField.beco'));
 const BecoSky = new Beco(path.join(becoPath, 'Sky.beco'));
 const BecoCave = new Beco(path.join(becoPath, 'Cave.beco'));
+const BecoTower = new Beco(path.join(ecoPath, 'MapTower.beco'));
+
+const TowerNames: { [key: string]: string } = {
+  1: "Lookout Landing",
+  2: "Lindor's Brow",
+  3: "Pikida Stonegrove",
+  4: "Eldin Canyon",
+  5: "Ulri Mountain",
+  6: "Sahasra Slope",
+  7: "Upland Zorana",
+  8: "Hyrule Field",
+  9: "Gerudo Canyon",
+  10: "Gerudo Highlands",
+  11: "Rabella Wetlands",
+  12: "Thyphlo Ruins",
+  13: "Popla Foothills",
+  14: "Mount Lanayru",
+  15: "Rospro Pass",
+};
 
 // Should probably be yaml not json for consistency
 const Ecosystem = Object.fromEntries(['Cave', 'Ground', 'MinusField', 'Sky'].map(name => {
@@ -116,9 +137,9 @@ for (const kind of Object.keys(MapPctTmp)) {
 const ShopData = JSON.parse(fs.readFileSync(path.join(ecoPath, 'shop_data.json'), 'utf-8'))
 
 const insertObj = db.prepare(`INSERT INTO objs
-  (map_type, map_name, ui_map, gen_group, hash_id, unit_config_name, ui_name, data, scale, map_static, drops, equip, merged, ui_drops, ui_equip, korok_id, korok_type)
+  (map_type, map_name, ui_map, gen_group, hash_id, unit_config_name, ui_name, data, fieldarea, region, scale, map_static, drops, equip, merged, ui_drops, ui_equip, korok_id, korok_type)
   VALUES
-  (@map_type, @map_name, @ui_map, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @scale, @map_static, @drops, @equip, @merged, @ui_drops, @ui_equip, @korok_id, @korok_type )`);
+  (@map_type, @map_name, @ui_map, @gen_group, @hash_id, @unit_config_name, @ui_name, @data, @fieldarea, @region, @scale, @map_static, @drops, @equip, @merged, @ui_drops, @ui_equip, @korok_id, @korok_type )`);
 
 const insertAiGroup = db.prepare(`INSERT INTO ai_groups
   (map_type, map_name, hash_id, data)
@@ -411,17 +432,27 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
       korok_id = KOROKS[actor.Hash].id;
       korok_type = getKorokType(actor.Dynamic?.HideType, actor.Gyaml);
     }
-
+    let fieldarea = null
+    let region = null
     const uiMap = [mapType, mapName];
     if (mapType === 'MinusField') {
       uiMap.push('depths');
+      fieldarea = 'Depths' + BecoMinus.getCurrentAreaNum(actor.Translate[0], actor.Translate[2]).toString();
     } else if (mapType === 'MainField') {
-        if (mapName.startsWith('DeepHole')) {
-          uiMap.push('chasm');
-        }
-        else if (!mapName.includes('__')) {
-          uiMap.push('surface');
-        }
+      if (mapName.startsWith('DeepHole')) {
+        uiMap.push('chasm');
+      }
+      else if (!mapName.includes('__')) {
+        uiMap.push('surface');
+      }
+      if (mapName.startsWith("Sky__")) {
+        fieldarea = 'Sky' + BecoSky.getCurrentAreaNum(actor.Translate[0], actor.Translate[2]).toString();
+      } else if (mapName.startsWith("Cave__")) {
+        fieldarea = 'Cave' + BecoCave.getCurrentAreaNum(actor.Translate[0], actor.Translate[2]).toString();
+      } else if (mapName.length == 3) { // A-1, ...
+        fieldarea = 'Surface' + BecoGround.getCurrentAreaNum(actor.Translate[0], actor.Translate[2]).toString();
+        region = TowerNames[BecoTower.getCurrentAreaNum(actor.Translate[0], actor.Translate[2])];
+      }
     }
 
     if (ShopData[actor.Gyaml])
@@ -437,6 +468,8 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
         unit_config_name: actor.Gyaml,
         ui_name: ui_name,
         data: JSON.stringify(actor),
+        fieldarea: fieldarea,
+        region: region,
         scale: actor.Dynamic?.IsLevelSensorTarget ? 1 : 0,
         drops: (Object.keys(drops).length > 0) ? JSON.stringify(drops) : null,
         equip: (equip.length > 0) ? JSON.stringify(equip) : null,
@@ -603,10 +636,10 @@ createIndexes();
 
 function createFts() {
   db.exec(`
-    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", tokenize="unicode61", map, actor, name, data, scale, drops, ui_drops, equip, ui_equip, hash_id, korok_id, korok_type);
+    CREATE VIRTUAL TABLE objs_fts USING fts5(content="", tokenize="unicode61", map, actor, name, data, fieldarea, region, scale, drops, ui_drops, equip, ui_equip, hash_id, korok_id, korok_type);
 
-    INSERT INTO objs_fts(rowid, map, actor, name, data, scale, drops, ui_drops, equip, ui_equip, hash_id, korok_id, korok_type )
-    SELECT objid, ui_map, unit_config_name, ui_name, data, scale, drops, ui_drops, equip, ui_equip, hash_id, korok_id, korok_type FROM objs;
+    INSERT INTO objs_fts(rowid, map, actor, name, data, fieldarea, region, scale, drops, ui_drops, equip, ui_equip, hash_id, korok_id, korok_type )
+    SELECT objid, ui_map, unit_config_name, ui_name, data, fieldarea, region, scale, drops, ui_drops, equip, ui_equip, hash_id, korok_id, korok_type FROM objs;
   `);
 }
 console.log('creating FTS tables...');

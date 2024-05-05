@@ -56,7 +56,7 @@ function generateMapTypeQueryCondition(mapType: string, sqlParamName = "@map_typ
   return `map_type = ${sqlParamName}`;
 }
 
-const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name as name, data, scale, drops, equip, map_static, korok_id, korok_type';
+const FIELDS = 'objid, map_type, map_name, hash_id, unit_config_name as name, data, fieldarea, region, scale, drops, equip, map_static, korok_id, korok_type';
 
 // Returns object details for an object.
 app.get('/obj/:objid', (req, res) => {
