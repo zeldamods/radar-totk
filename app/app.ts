@@ -256,7 +256,8 @@ function handleReqDropTable(req: express.Request, res: express.Response) {
     const stmt = db.prepare(`SELECT table_name from drop_tables where unit_config_name = ?`);
     rows = stmt.all(actorName);
   } else {
-    const stmt = db.prepare(`SELECT data from drop_tables where unit_config_name = ? and table_name like ? `);
+    // Prefer 'DropReason' of "" or null (order by)
+    const stmt = db.prepare(`SELECT data from drop_tables where unit_config_name = ? and table_name like ? order by json_extract(data, '$.DropReason')`);
     rows = stmt.get(actorName, tableName);
     if (rows && rows.data) {
       rows = JSON.parse(rows.data);
