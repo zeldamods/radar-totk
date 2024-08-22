@@ -435,23 +435,38 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
     let fieldarea = null
     let region = null
     const uiMap = [mapType, mapName];
-    if (mapType === 'MinusField') {
+    if (mapType.startsWith('MinusField') || mapName.includes("LargeDungeonFire")) {
       uiMap.push('depths');
       fieldarea = 'Depths' + BecoMinus.getCurrentAreaNum(actor.Translate[0], actor.Translate[2]).toString();
-    } else if (mapType === 'MainField') {
+    } else if (mapType.startsWith('MainField')) {
       if (mapName.startsWith('DeepHole')) {
         uiMap.push('chasm');
       }
       else if (!mapName.includes('__')) {
         uiMap.push('surface');
       }
-      if (mapName.startsWith("Sky__")) {
+      if (mapName.startsWith("Sky__") ||
+        mapName.includes("LargeDungeonWater") ||
+        mapName.includes("DragonBattleAndZeldaCatch") ||
+        mapName.includes("LargeDungeonWind")) {
         fieldarea = 'Sky' + BecoSky.getCurrentAreaNum(actor.Translate[0], actor.Translate[2]).toString();
-      } else if (mapName.startsWith("Cave__")) {
+      } else if (mapName.startsWith("Cave__") || mapName.startsWith("DeepHole__")) {
         fieldarea = 'Cave' + BecoCave.getCurrentAreaNum(actor.Translate[0], actor.Translate[2]).toString();
-      } else if (mapName.length == 3) { // A-1, ...
+      } else if (mapName.length == 3 ||
+        mapName.startsWith("Castle__") ||
+        mapName.includes("LargeDungeonThunder")) { // A-1, ...
         fieldarea = 'Surface' + BecoGround.getCurrentAreaNum(actor.Translate[0], actor.Translate[2]).toString();
         region = TowerNames[BecoTower.getCurrentAreaNum(actor.Translate[0], actor.Translate[2])];
+      } else if (mapName.startsWith("_DistanceView")) {
+        if (filePath.includes("MainField")) {
+          fieldarea = 'Surface0'
+        } else if (filePath.includes("MainField")) {
+          fieldarea = 'Depths0'
+        }
+      } else if (mapName == "Merchants") {
+      } else {
+        console.log("field area not defined", mapName, mapType);
+        process.exit(-1)
       }
     }
 
