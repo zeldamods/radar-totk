@@ -475,6 +475,9 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
     if (actor.Gyaml == "MiasmaSwarm") {
       actor.ui_name_alt = "Gloom Spawn"
     }
+    if (actor.Gyaml == "Npc_MinusFieldGhost_000") {
+      actor.ui_name_alt = "Spectral Figure"
+    }
 
     try {
       const result = insertObj.run({
