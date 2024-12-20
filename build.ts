@@ -472,6 +472,9 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
 
     if (ShopData[actor.Gyaml])
       actor.ShopData = ShopData[actor.Gyaml]
+    if (actor.Gyaml == "MiasmaSwarm") {
+      actor.ui_name_alt = "Gloom Spawn"
+    }
 
     try {
       const result = insertObj.run({
