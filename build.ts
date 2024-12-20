@@ -363,6 +363,15 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
           dyn.ShrineSubtitle = DUNGEONS[`${dyn.Location}_sub`]
         }
       }
+      for (const k of ["", "2", "3"]) {
+        const key = `CraftSignboardReward${k}`
+        if (dyn[key]) {
+          let ui_reward = getName(dyn[key])
+          if (ui_reward != dyn[key]) {
+            actor[`${key}_ui`] = ui_reward
+          }
+        }
+      }
     }
 
     // If DropTable and DropActor do not exist and an blank drop exists
