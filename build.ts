@@ -485,7 +485,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
       actor.ui_name_alt = "Gloom Spawn"
     }
     if (actor.Gyaml == "Npc_MinusFieldGhost_000") {
-      actor.ui_name_alt = "Spectral Figure"
+      actor.ui_name_alt = "Spectral Figure Pristine"
     }
 
     try {
