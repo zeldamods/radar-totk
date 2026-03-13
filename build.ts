@@ -321,6 +321,7 @@ function processBanc(filePath: string, mapType: string, mapName: string) {
     let equip: any = [];
     let ui_drops: any = [];
     let ui_equip: any = [];
+    actor.HashInt = actor.Hash
     actor.Hash = parseHash(actor.Hash);
     if (actor.Dynamic) {
       const dyn = actor.Dynamic;
